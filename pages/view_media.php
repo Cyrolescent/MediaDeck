@@ -22,7 +22,7 @@ $result = $conn->query($sql);
 <body>
 
 <h1>Media Collection</h1>
-<p><a href="add_media.php">➕ Add New Media</a></p>
+<a href="../index.php">🏠 Back to Home</a><br>
 
 <table>
     <tr>

@@ -48,7 +48,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 </head>
 <body>
 
-<h1>Add Media</h1>
+<h1>Add Media</h1><br>
+
+<a href="../index.php">🏠 Back to Home</a><br>
 
 <?php if (!empty($message)) echo "<p class='msg'>$message</p>"; ?>
 

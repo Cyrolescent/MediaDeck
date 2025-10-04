@@ -1,35 +1,49 @@
 <?php
-// include the database connection file
+// index.php
 require_once __DIR__ . '/config/dbconfig.php';
 
-// If we reached this line, db_connect.php was included successfully.
+// simple connection check
+$connected = isset($conn) && !$conn->connect_error;
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Mediadeck Home</title>
+    <title>MediaDeck Home</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 50px;
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        .menu { margin-top: 30px; }
+        .btn {
+            display:inline-block;
+            padding:14px 28px;
+            margin:10px;
+            background:#4A90E2;
+            color:#fff;
+            text-decoration:none;
+            border-radius:8px;
         }
-        .success { color: green; }
-        .error   { color: red; }
+        .btn:hover { background:#357ABD; }
+        .success { color: green; margin-top:20px; }
+        .error   { color: red; margin-top:20px; }
     </style>
 </head>
 <body>
     <h1>Welcome to MediaDeck</h1>
-    <a href="pages/add_media.php">Add Media</a><br>
-    <a href="pages/view_media.php">View Media</a><br>
-    <?php
-    // Check the database connection
-    if ($conn && !$conn->connect_error) {
-        echo "<p class='success'>✅ Connected to MySQL database successfully!</p>";
-    } else {
-        echo "<p class='error'>❌ Database connection failed: " . $conn->connect_error . "</p>";
-    }
-    ?>
+
+    <div class="menu">
+        <a class="btn" href="pages/view_media.php">View Collection</a>
+        <a class="btn" href="pages/organize_collection.php">Organize Collection</a>
+        <a class="btn" href="pages/settings.php">Settings</a>
+    </div>
+
+    <?php if ($connected): ?>
+        <p class="success">✅ Connected to MySQL database successfully.</p>
+    <?php else: ?>
+        <!-- In development you can show the error; in production show a generic message. -->
+        <p class="error">❌ Database connection failed. Please check your configuration.</p>
+        <!-- Optional debug line (remove on production): -->
+        <!-- <p class="error"><?= htmlspecialchars($conn->connect_error ?? 'Unknown error') ?></p> -->
+    <?php endif; ?>
 </body>
 </html>
+
