@@ -1,0 +1,95 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden; /* prevents extra scrolling */
+    font-family: "Poppins", sans-serif;
+    background: linear-gradient(rgba(0,0,0,1), rgba(33,20,127,1));
+    color: white;
+}
+
+/* MAIN CONTAINER */
+.home-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: calc(100vh - 70px); /* perfect height minus header */
+    padding: 80px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+
+/* LEFT SIDE (TEXT SECTION) */
+.text-section {
+    max-width: 600px;
+}
+
+.welcome {
+    font-size: 16px;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    color: #ddd;
+}
+
+.logo-text {
+    font-size: 60px;
+    font-weight: 900;
+    margin: 0 0 20px 0;
+}
+
+.logo-text span {
+    display: inline-block;
+}
+
+/* Colorful MEDIADECK letters */
+.m { color: #C9C95B; }
+.e { color: #D4C95B; }
+.d { color: #A2A9F0; }
+.i { color: #7B85E3; }
+.a { color: #9A8AE8; }
+.d2 { color: #A885F2; }
+.e2 { color: #8D84E0; }
+.c { color: #F27260; }
+.k { color: #F79949; }
+
+.description {
+    font-size: 15px;
+    line-height: 1.7;
+    color: #ccc;
+    margin-bottom: 40px;
+}
+
+.about-button {
+    text-decoration: none;
+    background-color: #3b4f94;
+    color: white;
+    font-weight: bold;
+    padding: 10px 35px;
+    border-radius: 25px;
+    box-shadow: 0px 4px 8px rgba(0,0,0,0.3);
+    transition: all 0.2s ease-in-out;
+}
+
+.about-button:hover {
+    background-color: #5065c0;
+    transform: scale(1.05);
+}
+
+/* RIGHT SIDE (IMAGE) */
+.image-section {
+    flex-shrink: 0;
+}
+
+.home-icons {
+  width: 470x;
+  opacity: 1;
+  position: absolute;
+  top: 94px;
+  left: 800px;
+  border-top-left-radius: 66px;
+  border-top-right-radius: 66px;
+  border-bottom-left-radius: 66px;
+  border-bottom-right-radius: 66px;
+  overflow: hidden;
+}

@@ -94,7 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <meta charset="UTF-8">
 <title>Add Media</title>
 <style>
-    body { font-family: Arial; margin: 20px; }
+    body { font-family: Arial;}
     .form-group { margin-bottom: 15px; }
     label { display: block; margin-bottom: 5px; font-weight: bold; }
     input[type=text], input[type=file], textarea, select { width: 100%; padding: 8px; margin-bottom: 10px; }
@@ -108,10 +108,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 </style>
 </head>
 <body>
-
-<h1>Add Media</h1><br>
-
-<a href="index.php">🏠 Back to Home</a><br><br>
+<?php include 'includes/header.php'; ?>
+<h1>Add Media</h1>
 
 <?php if (!empty($message)) echo "<p class='msg success'>$message</p>"; ?>
 <?php if (!empty($error)) echo "<p class='msg error'>$error</p>"; ?>
