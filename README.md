@@ -29,6 +29,15 @@
     d. PHP Extension pack: Xdebug
 3. XAMPP (for database)
 
+*-----------------------------*
+* DATABASE SET UP [REQUIREMENT]
+*-----------------------------*
+1. Open phpMyAdmin at localhost/dashboard/
+2. Create a new databasrle named "mediadeck"
+3. Click the Import tab
+4. Choose the file "mediadeck.sql" from this repository
+5. Click Go! 
+
 *******************************************************************************
 NOTE: DO NOT DELETE ANY FOLDERS ON THE PACKAGE THIS WILL DESTROY THE SYSTEM. THIS SYSTEM IS STILL IN DEVELOPMENT!
 *******************************************************************************
