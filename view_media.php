@@ -107,7 +107,7 @@ if ($result && $result->num_rows > 0) {
                                         <img src="<?= htmlspecialchars($item['file_path']) ?>" alt="<?= htmlspecialchars($item['title']) ?>">
                                     <?php endif; ?>
                                     <?php else: ?>
-                                        <div class="placeholder"><img src="assets/icons/image-icon.png" alt="Image" style="width: 60px; height: 60px;"></div>
+                                        <div class="placeholder"><img src="assets/icons/image-icon.png" alt="Image" style="width: 120px; height: 120px;"></div>
                                     <?php endif; ?>
                                     <div class="title"><?= htmlspecialchars($item['title']) ?></div>
                                 </div>
@@ -160,7 +160,7 @@ if ($result && $result->num_rows > 0) {
                                 <div class="media-item-square" data-id="<?= $item['id'] ?>" data-type="video" data-favorite="<?= $item['is_favorite'] ?>" data-rating="<?= $item['rating'] ?>">
                                     <div class="favorite-badge">❤️</div>
                                     <div class="rating-badge"><?= str_repeat('⭐', $item['rating']) ?></div>
-                                    <div class="placeholder"><img src="assets/icons/video-icon.png" alt="Video" style="width: 60px; height: 60px;"></div>
+                                    <div class="placeholder"><img src="assets/icons/video-icon.png" alt="Video" style="width: 120px; height: 120px;"></div>
                                     <div class="title"><?= htmlspecialchars($item['title']) ?></div>
                                 </div>
                             </a>
@@ -185,7 +185,7 @@ if ($result && $result->num_rows > 0) {
                                 <div class="media-item-portrait" data-id="<?= $item['id'] ?>" data-type="text" data-favorite="<?= $item['is_favorite'] ?>" data-rating="<?= $item['rating'] ?>">
                                     <div class="favorite-badge">❤️</div>
                                     <div class="rating-badge"><?= str_repeat('⭐', $item['rating']) ?></div>
-                                    <div class="placeholder"><img src="assets/icons/document-icon.png" alt="Document" style="width: 60px; height: 60px;"></div>
+                                    <div class="placeholder"><img src="assets/icons/document-icon.png" alt="Document" style="width: 120px; height: 120px;"></div>
                                     <div class="title"><?= htmlspecialchars($item['title']) ?></div>
                                 </div>
                             </a>
