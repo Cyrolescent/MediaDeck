@@ -1,0 +1,143 @@
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, #2b3d57 0%, #111827 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .members-section {
+            text-align: center;
+        }
+
+        .members-title {
+            font-size: 3em;
+            font-weight: bold;
+            font-style: italic;
+            margin-bottom: 30px;
+            color: #333;
+            font-family: 'Brush Script MT', cursive;
+        }
+
+        .members-image {
+            width: 100%;
+            max-width: 800px;
+            height: auto;
+            margin: 0 auto;
+            display: block;
+        }
+
+        /* Project Info Section */
+        .info-section {
+            background: #000;
+            color: white;
+            border-radius: 20px;
+            padding: 50px 60px;
+            margin-bottom: 30px;
+        }
+
+        .info-section h2 {
+            font-size: 2em;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .info-section p {
+            font-size: 1.3em;
+            line-height: 1.8;
+            font-style: italic;
+            color: white;
+        }
+
+        /* Features Section */
+        .features-section {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            margin-bottom: 30px;
+        }
+
+        .features-section h2 {
+            font-size: 2em;
+            margin-bottom: 30px;
+            color: #333;
+            text-align: center;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 15px;
+            color: white;
+            text-align: center;
+        }
+
+        .feature-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            font-size: 0.95em;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        /* Tech Stack Section */
+        .tech-section {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+        }
+
+        .tech-section h2 {
+            font-size: 2em;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .tech-grid {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .tech-item {
+            background: #f0f0f0;
+            padding: 20px 30px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #667eea;
+            transition: all 0.3s;
+        }
+
+        .tech-item:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: scale(1.05);
+        }

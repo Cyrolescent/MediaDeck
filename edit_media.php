@@ -4,81 +4,8 @@ require_once __DIR__ . '/config/auth_check.php';
 
 $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
-// If no id provided, show a simple chooser list
 if ($id <= 0) {
-    $res = $conn->query("SELECT id, title FROM media WHERE user_id = $current_user_id ORDER BY created_at DESC");
-    ?>
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <title>Edit Media</title>
-        <style>
-            body { 
-                font-family: Arial, sans-serif; 
-                margin: 0; 
-                background-color: #F3F4F6;
-            }
-            .container { 
-                margin: 20px; 
-            }
-            h2 { 
-                color: #333; 
-                margin-top: 20px;
-            }
-            ul { 
-                list-style: none; 
-                padding: 0;
-            }
-            li { 
-                margin: 10px 0;
-            }
-            a { 
-                color: #4A90E2; 
-                text-decoration: none;
-                padding: 8px 12px;
-                display: inline-block;
-                border-radius: 4px;
-                transition: background 0.2s;
-            }
-            a:hover { 
-                background: #f0f0f0;
-            }
-            .btn-back {
-                display: inline-block;
-                margin-bottom: 15px;
-                padding: 10px 20px;
-                background: #888;
-                color: white;
-                border-radius: 5px;
-                text-decoration: none;
-            }
-            .btn-back:hover {
-                background: #666;
-            }
-        </style>
-    </head>
-    <body>
-        <?php include 'includes/header.php'; ?>
-        <div class="container">
-            <h2>Select Media to Edit</h2>
-            <?php if ($res && $res->num_rows > 0): ?>
-                <ul>
-                <?php while ($r = $res->fetch_assoc()): ?>
-                    <li>
-                        <a href="edit_media.php?id=<?= $r['id'] ?>">
-                            ✏️ Edit: <?= htmlspecialchars($r['title']) ?> (ID <?= $r['id'] ?>)
-                        </a>
-                    </li>
-                <?php endwhile; ?>
-                </ul>
-            <?php else: ?>
-                <p>No media found. <a href='add_media.php' class="btn-back">Add one</a></p>
-            <?php endif; ?>
-        </div>
-    </body>
-    </html>
-    <?php
+    header('Location: view_media.php');
     exit;
 }
 
@@ -90,36 +17,65 @@ $result = $stmt->get_result();
 $media = $result ? $result->fetch_assoc() : null;
 
 if (!$media) {
-    $error_msg = "Media not found for ID {$id}.";
+    header('Location: view_media.php');
+    exit;
 }
 
 $error = '';
 $success = '';
+$thumbnailFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Basic sanitization/validation
     $title = trim($_POST['title'] ?? '');
+    $file_path = trim($_POST['file_path'] ?? '');
     $notes = trim($_POST['notes'] ?? '');
     $rating = isset($_POST['rating']) ? (int)$_POST['rating'] : 0;
     if ($rating < 0) $rating = 0;
     if ($rating > 5) $rating = 5;
     $is_favorite = isset($_POST['is_favorite']) ? 1 : 0;
+    
+    $thumbnail_path = $media['thumbnail']; // Keep existing thumbnail by default
 
     if (empty($title)) {
         $error = "Title is required!";
     } else {
-        $update = $conn->prepare("UPDATE media SET title = ?, notes = ?, rating = ?, is_favorite = ? WHERE id = ? AND user_id = ?");
-        $update->bind_param("ssiiiii", $title, $notes, $rating, $is_favorite, $id, $current_user_id);
+        // Handle thumbnail upload (only for audio/video with upload storage)
+        if ($media['storage_type'] === 'upload' && in_array($media['type'], ['audio', 'video']) && 
+            isset($_FILES['thumbnail_upload']) && $_FILES['thumbnail_upload']['error'] === UPLOAD_ERR_OK) {
+            
+            $thumb_file = $_FILES['thumbnail_upload'];
+            $thumb_ext = strtolower(pathinfo($thumb_file['name'], PATHINFO_EXTENSION));
+            
+            if (in_array($thumb_ext, $thumbnailFormats)) {
+                $thumb_filename = 'thumb_' . date('Y-m-d_H-i-s_') . uniqid() . '.' . $thumb_ext;
+                $thumb_path = __DIR__ . '/uploads/' . $thumb_filename;
+                
+                if (move_uploaded_file($thumb_file['tmp_name'], $thumb_path)) {
+                    // Delete old thumbnail if exists
+                    if (!empty($media['thumbnail']) && file_exists(__DIR__ . '/' . $media['thumbnail'])) {
+                        unlink(__DIR__ . '/' . $media['thumbnail']);
+                    }
+                    $thumbnail_path = 'uploads/' . $thumb_filename;
+                }
+            }
+        }
+
+        // Update media
+        if ($media['storage_type'] === 'link') {
+            $update = $conn->prepare("UPDATE media SET title = ?, file_path = ?, notes = ?, rating = ?, is_favorite = ?, thumbnail = ? WHERE id = ? AND user_id = ?");
+            $update->bind_param("sssiisii", $title, $file_path, $notes, $rating, $is_favorite, $thumbnail_path, $id, $current_user_id);
+        } else {
+            // For uploads, don't change file_path
+            $update = $conn->prepare("UPDATE media SET title = ?, notes = ?, rating = ?, is_favorite = ?, thumbnail = ? WHERE id = ? AND user_id = ?");
+            $update->bind_param("ssiisii", $title, $notes, $rating, $is_favorite, $thumbnail_path, $id, $current_user_id);
+        }
 
         if ($update->execute()) {
-            $success = "✅ Media updated successfully.";
-            // refresh $media values
-            $media['title'] = $title;
-            $media['notes'] = $notes;
-            $media['rating'] = $rating;
-            $media['is_favorite'] = $is_favorite;
+            // Redirect to detail page
+            header("Location: view_detail.php?id=" . $id);
+            exit;
         } else {
-            $error = "❌ Update failed: " . $conn->error;
+            $error = "⚠ Update failed: " . $conn->error;
         }
     }
 }
@@ -127,195 +83,134 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Media - MediaDeck</title>
-    <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 0;
-            background-color: #F3F4F6;
-        }
-        .container { 
-            margin: 20px;
-            max-width: 600px;
-        }
-        h1 {
-            color: #333;
-            margin-top: 0;
-        }
-        .form-group { 
-            margin-bottom: 20px;
-        }
-        label { 
-            display: block; 
-            margin-bottom: 8px; 
-            font-weight: bold;
-            color: #333;
-        }
-        input[type=text], 
-        textarea, 
-        input[type=number] { 
-            width: 100%; 
-            padding: 10px; 
-            margin-bottom: 10px; 
-            box-sizing: border-box;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-family: Arial, sans-serif;
-            font-size: 14px;
-        }
-        input[type=text]:focus,
-        textarea:focus,
-        input[type=number]:focus {
-            outline: none;
-            border-color: #4A90E2;
-            box-shadow: 0 0 5px rgba(74, 144, 226, 0.3);
-        }
-        textarea {
-            resize: vertical;
-            min-height: 120px;
-        }
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .checkbox-group input[type=checkbox] {
-            width: auto;
-            margin: 0;
-            padding: 0;
-        }
-        .button-group {
-            margin-top: 25px;
-            display: flex;
-            gap: 10px;
-        }
-        button, a.btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            text-decoration: none;
-            display: inline-block;
-            transition: background 0.2s;
-        }
-        button {
-            background: #4A90E2;
-            color: white;
-            flex: 1;
-        }
-        button:hover {
-            background: #357ABD;
-        }
-        a.btn {
-            background: #888;
-            color: white;
-            flex: 1;
-            text-align: center;
-        }
-        a.btn:hover {
-            background: #666;
-        }
-        .msg { 
-            padding: 15px; 
-            border-radius: 5px; 
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-        .msg.success { 
-            background: #d4edda; 
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .msg.error { 
-            background: #f8d7da; 
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .media-info { 
-            background: #fff; 
-            padding: 15px; 
-            border-radius: 5px; 
-            margin-bottom: 25px;
-            border-left: 4px solid #4A90E2;
-        }
-        .media-info p {
-            margin: 8px 0;
-            color: #555;
-        }
-        .media-info strong {
-            color: #333;
-        }
-        .error-message {
-            color: red;
-            padding: 15px;
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        .back-link {
-            color: #4A90E2;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .back-link:hover {
-            text-decoration: underline;
-        }
-    </style>
+    <link rel="stylesheet" href="assets/css/add_media.css">
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
-    
+
     <div class="container">
-        <h1>Edit Media</h1>
+        <div class="back-link">
+            <a href="view_detail.php?id=<?= $id ?>">🏠 Back to Detail</a>
+        </div>
 
-        <?php if (isset($error_msg)): ?>
-            <div class="error-message">
-                <strong>Error:</strong> <?= $error_msg ?>
-            </div>
-            <a href="view_media.php" class="back-link">← Back to Media List</a>
-        <?php else: ?>
-            <?php if ($error) echo "<div class='msg error'>$error</div>"; ?>
-            <?php if ($success) echo "<div class='msg success'>$success</div>"; ?>
-
-            <div class="media-info">
-                <p><strong>Media ID:</strong> <?= $media['id'] ?></p>
-                <p><strong>Type:</strong> <?= ucfirst($media['type']) ?></p>
-                <p><strong>Storage:</strong> <?= ucfirst($media['storage_type']) ?></p>
-                <p><strong>Date Added:</strong> <?= $media['created_at'] ?></p>
-            </div>
-
-            <form method="post">
-                <div class="form-group">
-                    <label for="title">Title:</label>
-                    <input type="text" id="title" name="title" value="<?= htmlspecialchars($media['title']) ?>" required>
+        <div class="form-container">
+            <div class="form-left">
+                <!-- Media Info Box (Non-editable) -->
+                <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #667eea;">
+                    <h3 style="margin: 0 0 10px 0; color: #667eea;">Media Information</h3>
+                    <p style="margin: 5px 0; color: #555;"><strong>Type:</strong> <?= strtoupper($media['type']) ?></p>
+                    <p style="margin: 5px 0; color: #555;"><strong>Storage:</strong> <?= strtoupper($media['storage_type']) ?></p>
+                    <p style="margin: 5px 0; color: #555;"><strong>Date Added:</strong> <?= date('M d, Y', strtotime($media['created_at'])) ?></p>
                 </div>
 
+                <?php if (!empty($error)): ?>
+                    <div class="alert alert-error"><?= $error ?></div>
+                <?php endif; ?>
+
+                <form method="POST" action="" enctype="multipart/form-data" id="editMediaForm">
+                    <!-- Title -->
+                    <div class="form-group">
+                        <label for="title">Title:</label>
+                        <input type="text" id="title" name="title" required value="<?= htmlspecialchars($media['title']) ?>">
+                    </div> <br>
+
+                    <!-- File/Link Path (only editable for links) -->
+                    <?php if ($media['storage_type'] === 'link'): ?>
+                        <div class="form-group">
+                            <label for="file_path">Link Path:</label>
+                            <input type="text" id="file_path" name="file_path" placeholder="e.g. https://example.com/file.jpg" value="<?= htmlspecialchars($media['file_path']) ?>">
+                        </div><br>
+                    <?php else: ?>
+                        <div class="form-group">
+                            <label>File Path:</label>
+                            <input type="text" value="<?= htmlspecialchars($media['file_path']) ?>" disabled style="background: #f0f0f0; color: #999;">
+                            <small style="color: #999; font-size: 0.85em;">Uploaded files cannot be changed</small>
+                        </div><br>
+                    <?php endif; ?>
+
+                    <!-- Thumbnail Upload (only for audio/video + upload) -->
+                    <?php if ($media['storage_type'] === 'upload' && in_array($media['type'], ['audio', 'video'])): ?>
+                        <div class="form-group">
+                            <label for="thumbnail_upload">Change Thumbnail (Optional):</label>
+                            <input type="file" id="thumbnail_upload" name="thumbnail_upload" accept="image/jpeg,image/png,image/gif,image/webp">
+                            <small class="format-info">Formats: JPG, PNG, GIF, WebP</small>
+                            <?php if (!empty($media['thumbnail'])): ?>
+                                <div style="margin-top: 10px;">
+                                    <small style="color: #666;">Current thumbnail: <?= htmlspecialchars(basename($media['thumbnail'])) ?></small>
+                                </div>
+                            <?php endif; ?>
+                        </div><br>
+                    <?php endif; ?>
+
+                    <!-- Rating -->
+                    <div class="form-group">
+                        <label for="rating">Rating (0-5):</label>
+                        <input type="number" id="rating" name="rating" min="0" max="5" value="<?= (int)$media['rating'] ?>"><br>
+                    </div>
+
+                    <!-- Favorite -->
+                    <div class="form-group checkbox-group">
+                        <input type="checkbox" id="is_favorite" name="is_favorite" <?= $media['is_favorite'] ? 'checked' : '' ?>>
+                        <label for="is_favorite">Mark as Favorite ⭐</label>
+                    </div><br><br>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn-submit">SAVE CHANGES</button>
+                    <a href="view_detail.php?id=<?= $id ?>" class="btn-submit" style="background: #888; display: inline-block; text-align: center; margin-top: 10px; text-decoration: none;">CANCEL</a>
+                </form>
+            </div>
+
+            <div class="form-right">
+                <!-- Thumbnail Preview -->
+                <div class="thumbnail-box">
+                    <div class="thumbnail-placeholder" id="thumbnailPreview">
+                        <?php if (!empty($media['thumbnail']) && file_exists(__DIR__ . '/' . $media['thumbnail'])): ?>
+                            <img src="<?= htmlspecialchars($media['thumbnail']) ?>" alt="Thumbnail" style="width: 100%; height: 100%; object-fit: cover;">
+                        <?php elseif ($media['type'] === 'image' && preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $media['file_path'])): ?>
+                            <img src="<?= htmlspecialchars($media['file_path']) ?>" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">
+                        <?php elseif ($media['type'] === 'audio'): ?>
+                            <img src="assets/icons/audio-icon.png" alt="Audio" style="width: 80%; height: 80%; object-fit: contain;">
+                        <?php elseif ($media['type'] === 'video'): ?>
+                            <img src="assets/icons/video-icon.png" alt="Video" style="width: 80%; height: 80%; object-fit: contain;">
+                        <?php elseif ($media['type'] === 'text'): ?>
+                            <img src="assets/icons/document-icon.png" alt="Document" style="width: 80%; height: 80%; object-fit: contain;">
+                        <?php else: ?>
+                            📷
+                        <?php endif; ?>
+                    </div>
+                    <?php if ($media['storage_type'] === 'upload' && in_array($media['type'], ['audio', 'video'])): ?>
+                        <div class="upload-text">CHANGE<br>THUMBNAIL</div>
+                    <?php else: ?>
+                        <div class="upload-text">PREVIEW</div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Notes -->
                 <div class="form-group">
                     <label for="notes">Notes:</label>
-                    <textarea id="notes" name="notes"><?= htmlspecialchars($media['notes']) ?></textarea>
+                    <textarea id="notes" name="notes" form="editMediaForm" rows="8"><?= htmlspecialchars($media['notes']) ?></textarea>
                 </div>
 
-                <div class="form-group">
-                    <label for="rating">Rating (0-5):</label>
-                    <input type="number" id="rating" name="rating" min="0" max="5" value="<?= (int)$media['rating'] ?>">
-                </div>
-
-                <div class="form-group checkbox-group">
-                    <input type="checkbox" id="favorite" name="is_favorite" <?= $media['is_favorite'] ? 'checked' : '' ?>> 
-                    <label for="favorite" style="margin-bottom: 0;">Mark as Favorite ⭐</label>
-                </div>
-
-                <div class="button-group">
-                    <button type="submit">Save Changes</button>
-                    <a href="view_media.php" class="btn">Cancel</a>
-                </div>
-            </form>
-        <?php endif; ?>
+            </div>
+        </div>
     </div>
+
+    <script>
+        // Thumbnail preview
+        document.getElementById('thumbnail_upload')?.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const preview = document.getElementById('thumbnailPreview');
+                    preview.innerHTML = `<img src="${event.target.result}" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
 </body>
 </html>
