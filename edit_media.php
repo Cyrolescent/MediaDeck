@@ -1,11 +1,12 @@
 <?php
 require_once __DIR__ . '/config/dbconfig.php';
+require_once __DIR__ . '/config/auth_check.php';
 
 $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
 // If no id provided, show a simple chooser list
 if ($id <= 0) {
-    $res = $conn->query("SELECT id, title FROM media ORDER BY created_at DESC");
+    $res = $conn->query("SELECT id, title FROM media WHERE user_id = $current_user_id ORDER BY created_at DESC");
     ?>
     <!DOCTYPE html>
     <html lang="en">
@@ -82,8 +83,8 @@ if ($id <= 0) {
 }
 
 // Fetch the media item
-$stmt = $conn->prepare("SELECT * FROM media WHERE id = ?");
-$stmt->bind_param("i", $id);
+$stmt = $conn->prepare("SELECT * FROM media WHERE id = ? AND user_id = ?");
+$stmt->bind_param("ii", $id, $current_user_id);
 $stmt->execute();
 $result = $stmt->get_result();
 $media = $result ? $result->fetch_assoc() : null;
@@ -107,8 +108,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($title)) {
         $error = "Title is required!";
     } else {
-        $update = $conn->prepare("UPDATE media SET title = ?, notes = ?, rating = ?, is_favorite = ? WHERE id = ?");
-        $update->bind_param("ssiii", $title, $notes, $rating, $is_favorite, $id);
+        $update = $conn->prepare("UPDATE media SET title = ?, notes = ?, rating = ?, is_favorite = ? WHERE id = ? AND user_id = ?");
+        $update->bind_param("ssiiiii", $title, $notes, $rating, $is_favorite, $id, $current_user_id);
 
         if ($update->execute()) {
             $success = "✅ Media updated successfully.";

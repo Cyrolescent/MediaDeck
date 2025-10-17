@@ -31,6 +31,16 @@
         padding: 0px;">
         Settings</a>
 
+        <a href="logout.php" 
+        style="color: white; 
+        text-decoration: none;
+        font-weight: 500; 
+        background: none;
+        margin: 0px;
+        padding: 0px;">
+        Logout
+        </a>
+
     </nav>
 </header>
 

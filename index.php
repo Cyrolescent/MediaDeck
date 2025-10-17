@@ -1,5 +1,13 @@
 <?php
-require_once __DIR__ . '/config/dbconfig.php';?>
+session_start();
+
+if (!isset($_SESSION['user_id'])) {
+    header('Location: login.php');
+    exit;
+}
+
+require_once __DIR__ . '/config/dbconfig.php';
+?>
 
 <!DOCTYPE html>
 <html lang="en">

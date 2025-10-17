@@ -11,7 +11,7 @@
     <?php include 'includes/header.php'; ?>
     <main class="home-container">
         <div class="text-section">
-            <h3 class="welcome">SettingsS</h3>
+            <h3 class="welcome">Settings</h3>
         </div>
     </main>
 </body>

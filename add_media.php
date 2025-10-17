@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config/dbconfig.php';
+require_once __DIR__ . '/config/auth_check.php';
 
 $message = '';
 $error = '';
@@ -87,11 +88,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         // Insert into database if no errors
         if (empty($error) && !empty($file_path)) {
             $stmt = $conn->prepare("
-                INSERT INTO media (title, type, storage_type, file_path, thumbnail, notes, rating, is_favorite)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO media (user_id, title, type, storage_type, file_path, thumbnail, notes, rating, is_favorite)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $stmt->bind_param(
-                "ssssssii",
+                "issssssii",
+                $current_user_id,
                 $title,
                 $type,
                 $storage_type,

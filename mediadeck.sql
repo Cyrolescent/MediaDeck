@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 16, 2025 at 08:24 AM
+-- Generation Time: Oct 17, 2025 at 07:11 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -29,6 +29,7 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `media` (
   `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
   `title` varchar(255) NOT NULL,
   `type` enum('image','video','audio','text') NOT NULL,
   `storage_type` enum('upload','link') NOT NULL,
@@ -45,14 +46,15 @@ CREATE TABLE `media` (
 -- Dumping data for table `media`
 --
 
-INSERT INTO `media` (`id`, `title`, `type`, `storage_type`, `file_path`, `notes`, `rating`, `is_favorite`, `thumbnail`, `created_at`, `updated_at`) VALUES
-(2, 'Dog image test', 'image', 'link', 'https://media.istockphoto.com/id/1340073038/photo/samoyed-a-white-big-fluffy-dog-in-the-park.jpg?s=1024x1024&w=is&k=20&c=14js5IlI1wrDeW0kT62Hs08jc7zDUpc1ox4ooi2uUoU=', 'CUTEST FLUFFLIEST DOG EVER', 4, 1, NULL, '2025-10-04 14:58:17', '2025-10-12 23:14:34'),
-(3, 'Sunset Beach Picture', 'image', 'link', 'https://img.freepik.com/free-photo/sunset-time-tropical-beach-sea-with-coconut-palm-tree_74190-1075.jpg?semt=ais_hybrid&w=740&q=80', 'a picture of a sunset at the beach', 4, 0, NULL, '2025-10-04 20:26:49', '2025-10-04 20:26:49'),
-(4, 'Pop In 2 music video', 'video', 'link', 'https://youtu.be/BTRpMqyzBFg', 'music video popin2 youtube video', 3, 0, NULL, '2025-10-09 11:36:03', '2025-10-09 11:36:30'),
-(12, 'doc', 'text', 'upload', 'uploads/2025-10-15_11-29-01_68ef695d4a144.txt', 'random readme', 0, 1, NULL, '2025-10-15 17:29:01', '2025-10-15 17:30:23'),
-(13, 'frame img', 'image', 'upload', 'uploads/2025-10-15_12-20-47_68ef757f51c32.png', 'fram tes', 1, 1, NULL, '2025-10-15 18:20:47', '2025-10-15 18:20:47'),
-(14, 'Test video', 'video', 'upload', 'uploads/2025-10-16_02-04-38_68f0369605463.mp4', '', 0, 0, NULL, '2025-10-16 08:04:38', '2025-10-16 08:04:38'),
-(15, 'better when im dancing', 'audio', 'upload', 'uploads/2025-10-16_07-11-04_68f07e68edb0c.mp3', 'song exam ple', 5, 1, 'uploads/thumb_2025-10-16_07-11-04_68f07e68f2fab.jpg', '2025-10-16 13:11:04', '2025-10-16 13:11:04');
+INSERT INTO `media` (`id`, `user_id`, `title`, `type`, `storage_type`, `file_path`, `notes`, `rating`, `is_favorite`, `thumbnail`, `created_at`, `updated_at`) VALUES
+(2, 2, 'Dog image test', 'image', 'link', 'https://media.istockphoto.com/id/1340073038/photo/samoyed-a-white-big-fluffy-dog-in-the-park.jpg?s=1024x1024&w=is&k=20&c=14js5IlI1wrDeW0kT62Hs08jc7zDUpc1ox4ooi2uUoU=', 'CUTEST FLUFFLIEST DOG EVER', 4, 1, NULL, '2025-10-04 14:58:17', '2025-10-17 07:00:58'),
+(3, 2, 'Sunset Beach Picture', 'image', 'link', 'https://img.freepik.com/free-photo/sunset-time-tropical-beach-sea-with-coconut-palm-tree_74190-1075.jpg?semt=ais_hybrid&w=740&q=80', 'a picture of a sunset at the beach', 4, 0, NULL, '2025-10-04 20:26:49', '2025-10-17 07:01:18'),
+(4, 2, 'Pop In 2 music video', 'video', 'link', 'https://youtu.be/BTRpMqyzBFg', 'music video popin2 youtube video', 3, 0, NULL, '2025-10-09 11:36:03', '2025-10-17 07:01:31'),
+(12, 2, 'doc', 'text', 'upload', 'uploads/2025-10-15_11-29-01_68ef695d4a144.txt', 'random readme', 0, 1, NULL, '2025-10-15 17:29:01', '2025-10-17 07:01:47'),
+(13, 2, 'frame img', 'image', 'upload', 'uploads/2025-10-15_12-20-47_68ef757f51c32.png', 'fram tes', 1, 1, NULL, '2025-10-15 18:20:47', '2025-10-17 07:02:01'),
+(14, 2, 'Test video', 'video', 'upload', 'uploads/2025-10-16_02-04-38_68f0369605463.mp4', '', 0, 0, NULL, '2025-10-16 08:04:38', '2025-10-17 07:02:10'),
+(15, 2, 'better when im dancing', 'audio', 'upload', 'uploads/2025-10-16_07-11-04_68f07e68edb0c.mp3', 'song exam ple', 5, 1, 'uploads/thumb_2025-10-16_07-11-04_68f07e68f2fab.jpg', '2025-10-16 13:11:04', '2025-10-17 07:02:19'),
+(16, 2, 'test acc', 'image', 'upload', 'uploads/2025-10-17_01-04-41_68f17a09d1bc8.png', 'screen shot landing page before', 1, 1, '', '2025-10-17 07:04:41', '2025-10-17 07:04:41');
 
 -- --------------------------------------------------------
 
@@ -78,6 +80,27 @@ CREATE TABLE `tags` (
   `description` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `users`
+--
+
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `status` enum('user','admin') DEFAULT 'user'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `users`
+--
+
+INSERT INTO `users` (`id`, `username`, `password`, `status`) VALUES
+(2, 'Angelo', '$2y$10$MMlZBicdjKtx4wLwBwSq5u/KHQNFGn6itR3EKTzr5f14hNLcK/.Na', 'user'),
+(4, 'Admin', '$2y$10$PSqhsvR.enM/sAF8BA3KiuLRKarVI5bDw/GvUG6S5mZ5lYxh3mVKO', 'admin');
+
 --
 -- Indexes for dumped tables
 --
@@ -86,7 +109,8 @@ CREATE TABLE `tags` (
 -- Indexes for table `media`
 --
 ALTER TABLE `media`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `fk_user_media` (`user_id`);
 
 --
 -- Indexes for table `media_tags`
@@ -103,6 +127,13 @@ ALTER TABLE `tags`
   ADD UNIQUE KEY `name` (`name`);
 
 --
+-- Indexes for table `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `username` (`username`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -110,7 +141,7 @@ ALTER TABLE `tags`
 -- AUTO_INCREMENT for table `media`
 --
 ALTER TABLE `media`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `tags`
@@ -119,8 +150,20 @@ ALTER TABLE `tags`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `users`
+--
+ALTER TABLE `users`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `media`
+--
+ALTER TABLE `media`
+  ADD CONSTRAINT `fk_user_media` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `media_tags`

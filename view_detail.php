@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/config/dbconfig.php';
+require_once __DIR__ . '/config/auth_check.php';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
@@ -8,9 +9,8 @@ if ($id <= 0) {
     exit;
 }
 
-// Fetch the media item
-$stmt = $conn->prepare("SELECT * FROM media WHERE id = ?");
-$stmt->bind_param("i", $id);
+$stmt = $conn->prepare("SELECT * FROM media WHERE id = ? AND user_id = ?");
+$stmt->bind_param("ii", $id, $current_user_id);
 $stmt->execute();
 $result = $stmt->get_result();
 $media = $result ? $result->fetch_assoc() : null;

@@ -1,7 +1,8 @@
 <?php
 require_once __DIR__ . '/config/dbconfig.php';
+require_once __DIR__ . '/config/auth_check.php';
 
-$sql = "SELECT id, title, type, storage_type, file_path, rating, is_favorite, notes, created_at FROM media ORDER BY created_at DESC";
+$sql = "SELECT id, title, type, storage_type, file_path, rating, is_favorite, notes, created_at FROM media WHERE user_id = $current_user_id ORDER BY created_at DESC";
 $result = $conn->query($sql);
 
 $images = [];
