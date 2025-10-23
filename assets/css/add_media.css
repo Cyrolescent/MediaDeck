@@ -170,7 +170,7 @@ body {
 /* Right Side Styles */
 .thumbnail-box {
     width: 100%;
-    aspect-ratio: 4/3;
+    height: 350px;
     background: #2A1535;
     border: 2px dashed #555;
     border-radius: 12px;
@@ -195,7 +195,7 @@ body {
 }
 
 .upload-text {
-    font-size: 18px;
+    font-size: px;
     font-weight: bold;
     color: #888;
     text-align: center;

@@ -9,7 +9,7 @@
 ">
     <div style="display: flex; align-items: center; gap: 10px;">
         <a href="index.php">
-        <img src="assets/images/logo.jpg" alt="MediaDeck Logo" style="width: 85px; height: 85px;">
+        <img src="assets/images/headerlogo.png" alt="MediaDeck Logo" style="width: 85px; height: 85px; margin-top: 5px;">
         <img src="assets/images/title.png" alt="MediaDeck Title" style="width: 180px; height: 85px;">
         </a>
     </div>

@@ -1,6 +1,7 @@
 <?php
-require_once __DIR__ . '/config/dbconfig.php';
 require_once __DIR__ . '/config/auth_check.php';
+require_once __DIR__ . '/config/dbconfig.php';
+require_once __DIR__ . '/config/tag_functions.php';
 
 $message = '';
 $error = '';
@@ -22,45 +23,40 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $notes        = $_POST['notes'] ?? '';
     $rating       = (int)($_POST['rating'] ?? 0);
     $is_favorite  = isset($_POST['is_favorite']) ? 1 : 0;
-    $tags         = isset($_POST['tags']) ? $_POST['tags'] : [];
+    $selected_tags = isset($_POST['selected_tags']) ? json_decode($_POST['selected_tags'], true) : [];
     $file_path    = '';
     $thumbnail_path = '';
 
     // Validate title
     if (empty($title)) {
-        $error = "❌ Title is required!";
+        $error = "⚠ Title is required!";
     } else {
         // Handle file upload or link
         if ($storage_type === 'upload' && isset($_FILES['file_upload']) && $_FILES['file_upload']['error'] === UPLOAD_ERR_OK) {
-            // FILE UPLOAD LOGIC
             $file = $_FILES['file_upload'];
             $filename = $file['name'];
             $tmp_name = $file['tmp_name'];
             $file_size = $file['size'];
             $file_ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 
-            // File size limit (100MB)
             $max_size = 100 * 1024 * 1024;
 
-            // Validate file extension
             if (!in_array($file_ext, $allowedFormats[$type])) {
-                $error = "❌ Invalid file type for " . strtoupper($type) . ". Allowed: " . implode(', ', $allowedFormats[$type]);
+                $error = "⚠ Invalid file type for " . strtoupper($type) . ". Allowed: " . implode(', ', $allowedFormats[$type]);
             } elseif ($file_size > $max_size) {
-                $error = "❌ File size exceeds 100MB limit!";
+                $error = "⚠ File size exceeds 100MB limit!";
             } else {
-                // Create unique filename
                 $new_filename = date('Y-m-d_H-i-s_') . uniqid() . '.' . $file_ext;
                 $upload_path = __DIR__ . '/uploads/' . $new_filename;
 
-                // Move uploaded file
                 if (move_uploaded_file($tmp_name, $upload_path)) {
                     $file_path = 'uploads/' . $new_filename;
                 } else {
-                    $error = "❌ Failed to upload file!";
+                    $error = "⚠ Failed to upload file!";
                 }
             }
 
-            // Handle thumbnail upload (only for audio/video)
+            // Handle thumbnail upload
             if (empty($error) && in_array($type, ['audio', 'video']) && isset($_FILES['thumbnail_upload']) && $_FILES['thumbnail_upload']['error'] === UPLOAD_ERR_OK) {
                 $thumb_file = $_FILES['thumbnail_upload'];
                 $thumb_ext = strtolower(pathinfo($thumb_file['name'], PATHINFO_EXTENSION));
@@ -76,13 +72,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             }
 
         } elseif ($storage_type === 'link') {
-            // LINK INPUT LOGIC
             $file_path = $_POST['file_path'] ?? '';
             if (empty($file_path)) {
-                $error = "❌ Please provide a link!";
+                $error = "⚠ Please provide a link!";
             }
         } else {
-            $error = "❌ Please select a file or provide a link!";
+            $error = "⚠ Please select a file or provide a link!";
         }
 
         // Insert into database if no errors
@@ -107,22 +102,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if ($stmt->execute()) {
                 $media_id = $conn->insert_id;
                 
-                // Insert tags
-                if (!empty($tags) && is_array($tags)) {
-                    $tag_stmt = $conn->prepare("INSERT INTO media_tags (media_id, tag) VALUES (?, ?)");
-                    foreach ($tags as $tag) {
-                        $tag = trim($tag);
-                        if (!empty($tag)) {
-                            $tag_stmt->bind_param("is", $media_id, $tag);
-                            $tag_stmt->execute();
-                        }
-                    }
-                    $tag_stmt->close();
+                // Save tags (limit to 10)
+                if (!empty($selected_tags) && is_array($selected_tags)) {
+                    $tags_to_save = array_slice($selected_tags, 0, 10);
+                    saveMediaTags($conn, $media_id, $tags_to_save);
                 }
                 
                 $message = "✅ Media added successfully!";
             } else {
-                $error = "❌ Error: " . $conn->error;
+                $error = "⚠ Error: " . $conn->error;
             }
             $stmt->close();
         }
@@ -136,6 +124,157 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Media - MediaDeck</title>
     <link rel="stylesheet" href="assets/css/add_media.css">
+    <style>
+        .tags-container-new {
+            margin-top: 10px;
+        }
+        
+        .tag-search-box {
+            position: relative;
+        }
+        
+        .tag-search-input {
+            width: 100%;
+            padding: 10px 35px 10px 10px;
+            border: 1px solid #555;
+            border-radius: 8px;
+            background: #2A1535;
+            color: #f0f0f0;
+            font-size: 14px;
+        }
+        
+        .tag-search-input:focus {
+            outline: none;
+            border-color: #4A90E2;
+        }
+        
+        .search-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
+            pointer-events: none;
+        }
+        
+        .tags-section-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .tags-section-wrapper-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        
+        .available-tags, .selected-tags {
+            background: #2A1535;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .available-tags-compact, .selected-tags-compact {
+            background: #2A1535;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 10px;
+            min-height: 120px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .section-header {
+            font-weight: bold;
+            color: #f0f0f0;
+            margin-bottom: 10px;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .tag-counter {
+            color: #4A90E2;
+            font-size: 12px;
+        }
+        
+        .tag-counter.limit-reached {
+            color: #ff6b6b;
+        }
+        
+        .tag-item {
+            display: inline-block;
+            padding: 6px 12px;
+            margin: 5px 5px 5px 0;
+            border-radius: 15px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #555;
+        }
+        
+        .tag-item.available {
+            background: #3d2550;
+            color: #f0f0f0;
+        }
+        
+        .tag-item.available:hover {
+            background: #4A90E2;
+            border-color: #4A90E2;
+        }
+        
+        .tag-item.selected {
+            background: #4A90E2;
+            color: white;
+            border-color: #4A90E2;
+        }
+        
+        .tag-item.selected:hover {
+            background: #ff6b6b;
+            border-color: #ff6b6b;
+        }
+        
+        .tag-type-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            margin-left: 5px;
+        }
+        
+        .no-tags-message {
+            color: #888;
+            text-align: center;
+            padding: 20px;
+            font-size: 13px;
+        }
+        
+        .tags-divider {
+            margin: 15px 0;
+            border: none;
+            border-top: 1px solid #555;
+        }
+        
+        .tag-category {
+            color: #888;
+            font-size: 12px;
+            margin-top: 15px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        .tag-category:first-child {
+            margin-top: 0;
+        }
+    </style>
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
@@ -155,9 +294,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <?php endif; ?>
 
                 <form method="POST" action="" enctype="multipart/form-data" id="addMediaForm">
+                    <!-- Hidden field for selected tags -->
+                    <input type="hidden" id="selected_tags_input" name="selected_tags" value="[]">
+                    
                     <!-- Title -->
                     <div class="form-group">
-                        <label for="title">Title:</label>
+                        <h1 style= "font-family: 'Montserrat, sans-serif;"> Add Media to your Collection!<h1>
+                        <label for="title">Title:</label> <br>
                         <input type="text" id="title" name="title" required>
                     </div> <br>
 
@@ -169,8 +312,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                             <option value="video">VIDEO</option>
                             <option value="audio">AUDIO</option>
                             <option value="text">TEXT</option>
-                        </select> <br>
-                    </div>
+                        </select>
+                    </div> <br>
 
                     <!-- Storage Method -->
                     <div class="form-group">
@@ -178,73 +321,94 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         <select id="storage_type" name="storage_type" required onchange="updateFormFields()">
                             <option value="link">Link</option>
                             <option value="upload">Upload</option>
-                        </select> <br>
-                    </div>
+                        </select>
+                    </div> <br>
 
                     <!-- File/Link Path -->
                     <div class="form-group" id="linkSection">
                         <label for="file_path" id="pathLabel">File/Link Path:</label>
                         <input type="text" id="file_path" name="file_path" placeholder="e.g. https://example.com/file.jpg">
-                    </div><br>
+                    </div>
 
                     <!-- File Upload Section -->
                     <div class="form-group" id="uploadSection" style="display: none;">
                         <label for="file_upload" id="uploadLabel">Choose File:</label>
-                        <input type="file" id="file_upload" name="file_upload" accept="">
+                        <input type="file" id="file_upload" name="file_upload" accept=""> <br>
                         <small id="fileFormatInfo" class="format-info"></small>
-                    </div><br>
+                    </div> <br>
 
-                    <!-- Thumbnail Upload (only for audio/video + upload) -->
+                    <!-- Thumbnail Upload -->
                     <div class="form-group" id="thumbnailSection" style="display: none;">
                         <label for="thumbnail_upload">Upload Thumbnail:</label>
-                        <input type="file" id="thumbnail_upload" name="thumbnail_upload" accept="image/jpeg,image/png,image/gif,image/webp">
+                        <input type="file" id="thumbnail_upload" name="thumbnail_upload" accept="image/jpeg,image/png,image/gif,image/webp"><br>
                         <small class="format-info">Formats: JPG, PNG, GIF, WebP</small>
-                    </div>
+                    </div> <br>
 
                     <!-- Rating -->
                     <div class="form-group">
-                        <label for="rating">Rating (0-5):</label>
-                        <input type="number" id="rating" name="rating" min="0" max="5" value="0"><br>
-                    </div>
+                        <label for="rating">Rating (0-5) ⭐:</label>
+                        <input type="number" id="rating" name="rating" min="0" max="5" value="0">
+                    </div> <br> <br>
 
                     <!-- Favorite -->
                     <div class="form-group checkbox-group">
                         <input type="checkbox" id="is_favorite" name="is_favorite">
-                        <label for="is_favorite">Mark as Favorite ⭐</label>
-                    </div><br><br>
+                        <label for="is_favorite">Mark as Favorite ❤</label>
+                    </div> <br>
 
-                    <!-- Submit Button -->
-                    <button type="submit" class="btn-submit">ADD TO THE LIST</button>
+                    <!-- Notes (moved to left column) -->
+                    <div class="form-group" style="margin-top: 45px;">
+                        <label for="notes">Notes:</label>
+                        <textarea id="notes" name="notes" form="addMediaForm" rows="12"></textarea>
+                    </div>
                 </form>
             </div>
 
             <div class="form-right">
                 <!-- Thumbnail Preview -->
                 <div class="thumbnail-box">
+                    <div class="upload-text" id="uploadText">THUMBNAIL</div>
                     <div class="thumbnail-placeholder" id="thumbnailPreview">
                         📷
                     </div>
-                    <div class="upload-text">UPLOAD<br>THUMBNAIL</div>
                 </div>
 
-                <!-- Notes -->
+                <!-- Tags Section -->
                 <div class="form-group">
-                    <label for="notes">Notes:</label>
-                    <textarea id="notes" name="notes" form="addMediaForm" rows="8"></textarea>
-                </div>
-
-                <!-- Tags -->
-                <div class="form-group">
-                    <label>Tags(TEST):</label>
-                    <div class="tags-container">
-                        <div class="tag-button" onclick="toggleTag(this, 'Video')">Video</div>
-                        <div class="tag-button" onclick="toggleTag(this, 'Film')">Film</div>
-                        <div class="tag-button" onclick="toggleTag(this, 'Image')">Image</div>
-                        <div class="tag-button" onclick="toggleTag(this, 'Audio')">Audio</div>
-                        <div class="tag-button" onclick="toggleTag(this, 'Text')">Text</div>
+                    <label>Tags🔖:</label>
+                    
+                    <!-- Search Box -->
+                    <div class="tag-search-box">
+                        <input type="text" class="tag-search-input" id="tagSearch" placeholder="🔍 Search tags...">
                     </div>
-                    <div id="selectedTags"></div>
+                    
+                    <!-- Available and Selected Tags -->
+                    <div class="tags-section-wrapper-vertical">
+                        <!-- Available Tags -->
+                        <div class="available-tags-compact">
+                            <div class="section-header">Available</div>
+                            <div id="availableTagsList">
+                                <div class="no-tags-message">Select a media type</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Selected Tags -->
+                        <div class="selected-tags-compact">
+                            <div class="section-header">
+                                <span>Selected</span>
+                                <span class="tag-counter" id="tagCounter">0/10</span>
+                            </div>
+                            <div id="selectedTagsList">
+                                <div class="no-tags-message">No tags selected</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <small class="format-info">Click tags to add/remove. Max 10 tags.</small>
                 </div>
+
+                <!-- Submit Button at Bottom of Right Column -->
+                <button type="submit" class="btn-submit" form="addMediaForm" style="margin-top: 10px; width: 100%;">ADD TO THE LIST</button>
             </div>
         </div>
     </div>
@@ -252,28 +416,33 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <script>
         const formatInfo = {
             'image': {
-                extensions: ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'],
                 accept: 'image/jpeg,image/png,image/gif,image/svg+xml,image/webp',
                 text: 'Formats: JPG, PNG, GIF, SVG, WebP'
             },
             'audio': {
-                extensions: ['mp3', 'wav', 'ogg'],
                 accept: 'audio/mpeg,audio/wav,audio/ogg',
                 text: 'Formats: MP3, WAV, OGG'
             },
             'video': {
-                extensions: ['mp4', 'webm', 'ogv'],
                 accept: 'video/mp4,video/webm,video/ogg',
                 text: 'Formats: MP4, WebM, OGV'
             },
             'text': {
-                extensions: ['html', 'htm', 'pdf', 'txt', 'rtf', 'xml', 'docx', 'pptx', 'xlsx', 'odt'],
                 accept: '.html,.htm,.pdf,.txt,.rtf,.xml,.docx,.pptx,.xlsx,.odt',
-                text: 'Formats: HTML, PDF, TXT, RTF, XML, DOCX, PPTX, XLSX, ODT (Office files for MS viewer only)'
+                text: 'Formats: HTML, PDF, TXT, RTF, XML, DOCX, PPTX, XLSX, ODT'
             }
         };
 
+        const allTagsData = <?php echo json_encode([
+            'image' => ['default' => getDefaultTags($pdo, 'image'), 'custom' => getCustomTags($pdo, $current_user_id, 'image')],
+            'video' => ['default' => getDefaultTags($pdo, 'video'), 'custom' => getCustomTags($pdo, $current_user_id, 'video')],
+            'audio' => ['default' => getDefaultTags($pdo, 'audio'), 'custom' => getCustomTags($pdo, $current_user_id, 'audio')],
+            'text' => ['default' => getDefaultTags($pdo, 'text'), 'custom' => getCustomTags($pdo, $current_user_id, 'text')],
+            'universal_custom' => getCustomTags($pdo, $current_user_id, 'universal')
+        ]); ?>;
+
         let selectedTags = [];
+        const MAX_TAGS = 10;
 
         function updateFormFields() {
             const type = document.getElementById('type').value;
@@ -284,33 +453,34 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             const fileUpload = document.getElementById('file_upload');
             const fileFormatInfo = document.getElementById('fileFormatInfo');
             const pathLabel = document.getElementById('pathLabel');
+            const uploadText = document.getElementById('uploadText');
+            const thumbnailPreview = document.getElementById('thumbnailPreview');
 
-            // Update label text
-            if (storageType === 'upload') {
-                pathLabel.textContent = 'Upload:';
+            pathLabel.textContent = storageType === 'upload' ? 'Upload:' : 'File/Link Path:';
+
+            // Update thumbnail box based on media type
+            if (type === 'text') {
+                uploadText.textContent = 'UNAVAILABLE';
+                thumbnailPreview.innerHTML = '📄';
+                thumbnailPreview.style.opacity = '0.5';
             } else {
-                pathLabel.textContent = 'File/Link Path:';
+                uploadText.innerHTML = 'UPLOAD THUMBNAIL';
+                thumbnailPreview.innerHTML = '📷';
+                thumbnailPreview.style.opacity = '1';
             }
 
-            // Show/hide sections
             if (storageType === 'upload') {
                 linkSection.style.display = 'none';
                 uploadSection.style.display = 'block';
                 document.getElementById('file_path').removeAttribute('required');
                 fileUpload.setAttribute('required', 'required');
 
-                // Update file accept attributes
                 if (formatInfo[type]) {
                     fileUpload.accept = formatInfo[type].accept;
                     fileFormatInfo.textContent = formatInfo[type].text;
                 }
 
-                // Show thumbnail upload for audio/video
-                if (type === 'audio' || type === 'video') {
-                    thumbnailSection.style.display = 'block';
-                } else {
-                    thumbnailSection.style.display = 'none';
-                }
+                thumbnailSection.style.display = (type === 'audio' || type === 'video') ? 'block' : 'none';
             } else {
                 linkSection.style.display = 'block';
                 uploadSection.style.display = 'none';
@@ -318,32 +488,145 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 document.getElementById('file_path').setAttribute('required', 'required');
                 fileUpload.removeAttribute('required');
             }
+            
+            updateAvailableTags();
         }
 
-        function toggleTag(element, tagName) {
-            element.classList.toggle('active');
+        function updateAvailableTags() {
+            const type = document.getElementById('type').value;
+            const searchTerm = document.getElementById('tagSearch').value.toLowerCase();
+            const availableList = document.getElementById('availableTagsList');
             
-            if (selectedTags.includes(tagName)) {
-                selectedTags = selectedTags.filter(t => t !== tagName);
-            } else {
-                selectedTags.push(tagName);
+            availableList.innerHTML = '';
+            
+            // Get tags for current type
+            const defaultTags = allTagsData[type]?.default || [];
+            const customTags = allTagsData[type]?.custom || [];
+            const universalTags = allTagsData.universal_custom || [];
+            
+            // Filter out already selected tags
+            const availableDefault = defaultTags.filter(tag => 
+                !selectedTags.includes(tag.id) && 
+                tag.name.toLowerCase().includes(searchTerm)
+            );
+            const availableCustom = [...customTags, ...universalTags].filter(tag => 
+                !selectedTags.includes(tag.id) && 
+                tag.name.toLowerCase().includes(searchTerm)
+            );
+            
+            if (availableDefault.length === 0 && availableCustom.length === 0) {
+                availableList.innerHTML = '<div class="no-tags-message">No tags found</div>';
+                return;
             }
             
-            updateHiddenTags();
+            // Display default tags
+            if (availableDefault.length > 0) {
+                const defaultCategory = document.createElement('div');
+                defaultCategory.className = 'tag-category';
+                defaultCategory.textContent = 'Default Tags';
+                availableList.appendChild(defaultCategory);
+                
+                availableDefault.forEach(tag => {
+                    const tagEl = createTagElement(tag, false);
+                    availableList.appendChild(tagEl);
+                });
+            }
+            
+            // Display custom tags
+            if (availableCustom.length > 0) {
+                if (availableDefault.length > 0) {
+                    const divider = document.createElement('hr');
+                    divider.className = 'tags-divider';
+                    availableList.appendChild(divider);
+                }
+                
+                const customCategory = document.createElement('div');
+                customCategory.className = 'tag-category';
+                customCategory.textContent = 'Custom Tags';
+                availableList.appendChild(customCategory);
+                
+                availableCustom.forEach(tag => {
+                    const tagEl = createTagElement(tag, false);
+                    availableList.appendChild(tagEl);
+                });
+            }
         }
 
-        function updateHiddenTags() {
-            const container = document.getElementById('selectedTags');
-            container.innerHTML = '';
+        function updateSelectedTags() {
+            const selectedList = document.getElementById('selectedTagsList');
+            const counter = document.getElementById('tagCounter');
             
-            selectedTags.forEach(tag => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'tags[]';
-                input.value = tag;
-                container.appendChild(input);
+            counter.textContent = `${selectedTags.length}/10`;
+            counter.classList.toggle('limit-reached', selectedTags.length >= MAX_TAGS);
+            
+            if (selectedTags.length === 0) {
+                selectedList.innerHTML = '<div class="no-tags-message">No tags selected</div>';
+                return;
+            }
+            
+            selectedList.innerHTML = '';
+            
+            // Get all tags to find names
+            const type = document.getElementById('type').value;
+            const allTags = [
+                ...(allTagsData[type]?.default || []),
+                ...(allTagsData[type]?.custom || []),
+                ...(allTagsData.universal_custom || [])
+            ];
+            
+            selectedTags.forEach(tagId => {
+                const tag = allTags.find(t => t.id == tagId);
+                if (tag) {
+                    const tagEl = createTagElement(tag, true);
+                    selectedList.appendChild(tagEl);
+                }
             });
+            
+            // Update hidden input
+            document.getElementById('selected_tags_input').value = JSON.stringify(selectedTags);
         }
+
+        function createTagElement(tag, isSelected) {
+            const tagEl = document.createElement('span');
+            tagEl.className = `tag-item ${isSelected ? 'selected' : 'available'}`;
+            tagEl.textContent = tag.name;
+            
+            if (!isSelected && tag.media_type === 'universal') {
+                const badge = document.createElement('span');
+                badge.className = 'tag-type-badge';
+                badge.textContent = 'ALL';
+                tagEl.appendChild(badge);
+            }
+            
+            tagEl.onclick = () => toggleTag(tag.id);
+            
+            return tagEl;
+        }
+
+        function toggleTag(tagId) {
+            const index = selectedTags.indexOf(tagId);
+            
+            if (index > -1) {
+                // Remove tag
+                selectedTags.splice(index, 1);
+            } else {
+                // Add tag (if under limit)
+                if (selectedTags.length < MAX_TAGS) {
+                    selectedTags.push(tagId);
+                } else {
+                    alert('Maximum 10 tags allowed!');
+                    return;
+                }
+            }
+            
+            updateAvailableTags();
+            updateSelectedTags();
+        }
+
+        // Search functionality
+        document.getElementById('tagSearch').addEventListener('input', function() {
+            updateAvailableTags();
+        });
 
         // Thumbnail preview
         document.getElementById('thumbnail_upload')?.addEventListener('change', function(e) {
@@ -358,7 +641,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             }
         });
 
-        // Initialize form
+        // Image file preview (for uploaded images)
+        document.getElementById('file_upload')?.addEventListener('change', function(e) {
+            const type = document.getElementById('type').value;
+            const file = e.target.files[0];
+            
+            if (type === 'image' && file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const preview = document.getElementById('thumbnailPreview');
+                    preview.innerHTML = `<img src="${event.target.result}" alt="Preview" style="width: 100%; height: 100%; object-fit: cover;">`;
+                    preview.style.opacity = '1';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Initialize
         updateFormFields();
     </script>
 </body>
