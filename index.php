@@ -36,5 +36,6 @@ require_once __DIR__ . '/config/dbconfig.php';
             <img src="assets/images/home-icons.png" alt="MediaDeck Icons" class="home-icons">
         </div>
     </main>
+    <?php include 'includes/footer.php'; ?>
 </body>
 </html>

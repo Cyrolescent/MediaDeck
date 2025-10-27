@@ -102,8 +102,8 @@ if (!$item) {
             <p style="color:red;"><?= $error ?></p>
             <a href="view_media.php" class="btn btn-secondary">Back to list</a>
         <?php else: ?>
-            <p>Are you sure you want to delete: <strong><?= htmlspecialchars($item['title']) ?></strong> (ID <?= $item['id'] ?>)?</p>
-            <p style="color: #d32f2f; font-size: 0.9em;">⚠️ This action cannot be undone. If this is an uploaded file, it will be permanently deleted from the server.</p>
+            <p>Are you sure you want to delete: <strong><?= htmlspecialchars($item['title']) ?></strong></p>
+            <p style="color: #d32f2f; font-size: 0.9em;">⚠️ This action cannot be undone. If this is an uploaded file, it will be permanently deleted.</p>
 
             <form method="post">
                 <input type="hidden" name="id" value="<?= $item['id'] ?>">

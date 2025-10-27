@@ -11,7 +11,7 @@ $allowedFormats = [
     'image' => ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'],
     'audio' => ['mp3', 'wav', 'ogg'],
     'video' => ['mp4', 'webm', 'ogv'],
-    'text' => ['html', 'htm', 'pdf', 'txt', 'rtf', 'xml', 'docx', 'pptx', 'xlsx', 'odt']
+    'text' => ['html', 'htm', 'pdf', 'txt', 'rtf', 'xml']
 ];
 
 $thumbnailFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
@@ -428,8 +428,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 text: 'Formats: MP4, WebM, OGV'
             },
             'text': {
-                accept: '.html,.htm,.pdf,.txt,.rtf,.xml,.docx,.pptx,.xlsx,.odt',
-                text: 'Formats: HTML, PDF, TXT, RTF, XML, DOCX, PPTX, XLSX, ODT'
+                accept: '.html,.htm,.pdf,.txt,.rtf,.xml',
+                text: 'Formats: HTML, PDF, TXT, RTF, XML'
             }
         };
 

@@ -493,3 +493,327 @@
         #listView .clickable-link:hover {
             color: #357ABD;
         }
+        /* ADD ONLY THESE STYLES TO THE END OF YOUR view.css */
+
+/* Active button tint */
+button.active-btn {
+    background: #4A90E2 !important;
+    color: white !important;
+    border-color: #4A90E2 !important;
+}
+
+button.active-btn:hover {
+    background: #357ABD !important;
+}
+
+/* Row colors for list view (with background) */
+#listView .row-image { 
+    background: rgba(255, 165, 0, 0.15) !important; 
+    border-left: 4px solid #FFA500; 
+}
+
+#listView .row-video { 
+    background: rgba(74, 144, 226, 0.15) !important; 
+    border-left: 4px solid #4A90E2; 
+}
+
+#listView .row-audio { 
+    background: rgba(40, 167, 69, 0.15) !important; 
+    border-left: 4px solid #28a745; 
+}
+
+#listView .row-text { 
+    background: rgba(128, 128, 128, 0.15) !important; 
+    border-left: 4px solid #888; 
+}
+/* ========================================
+   ADD THESE STYLES TO THE END OF view.css
+   ======================================== */
+
+/* Active button tint */
+button.active-btn {
+    background: #4A90E2 !important;
+    color: white !important;
+    border-color: #4A90E2 !important;
+}
+
+button.active-btn:hover {
+    background: #357ABD !important;
+}
+
+/* Make Add Media button same size */
+.add-media-btn {
+    padding: 10px 20px !important;
+    font-size: 14px !important;
+    font-weight: bold !important;
+}
+
+/* Circular checkbox style for ALL checkboxes */
+input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #555;
+    border-radius: 50%;
+    background: #f9f9f9;
+    cursor: pointer;
+    position: relative;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+input[type="checkbox"]:checked {
+    background: #4A90E2;
+    border-color: #4A90E2;
+}
+
+input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Radio buttons stay circular */
+input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #555;
+    border-radius: 50%;
+    background: #f9f9f9;
+    cursor: pointer;
+    position: relative;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+input[type="radio"]:checked {
+    background: #4A90E2;
+    border-color: #4A90E2;
+}
+
+input[type="radio"]:checked::after {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: white;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Filter section styling */
+.filter-section {
+    margin: 20px 0;
+    padding: 15px;
+    background: rgb(156, 155, 155);
+    border-radius: 8px;
+}
+
+.filter-section h4 {
+    color: #4A90E2;
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.filter-section label {
+    display: flex;
+    align-items: center;
+    margin: 8px 0;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.filter-two-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+/* Rating filter */
+.rating-filter-row {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.rating-filter-row label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Tag selection interface */
+.tag-selection-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin: 10px 0;
+}
+
+.tag-dropdown {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.tag-dropdown h5 {
+    color: #666;
+    font-size: 12px;
+    margin: 0 0 8px 0;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.tag-search-input-filter {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background: #f9f9f9;
+    color: #333;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.tag-search-input-filter:focus {
+    outline: none;
+    border-color: #4A90E2;
+}
+
+.tag-list-filter {
+    max-height: 120px;
+    overflow-y: auto;
+    font-size: 13px;
+}
+
+.tag-item-filter {
+    display: flex;
+    align-items: center;
+    padding: 4px 0;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.tag-item-filter:hover {
+    background: rgba(74, 144, 226, 0.1);
+}
+
+.tag-item-filter label {
+    cursor: pointer;
+    flex: 1;
+    margin: 0;
+}
+
+.no-custom-tags {
+    color: #999;
+    font-size: 12px;
+    text-align: center;
+    padding: 20px 10px;
+}
+
+/* Selected tags display */
+.selected-tags-display {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 12px;
+    min-height: 70px;
+    max-height: 110px;
+    overflow-y: auto;
+}
+
+.selected-tags-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.selected-tags-header h4 {
+    margin: 0;
+    font-size: 14px;
+    color: #4A90E2;
+}
+
+.tag-counter-filter {
+    font-size: 12px;
+    color: #666;
+    font-weight: bold;
+}
+
+.tag-counter-filter.limit-reached {
+    color: #ff6b6b;
+}
+
+.selected-tag-badge {
+    display: inline-block;
+    background: #4A90E2;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    margin: 3px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.selected-tag-badge:hover {
+    background: #ff6b6b;
+}
+
+.selected-tag-badge::after {
+    content: ' ×';
+    margin-left: 5px;
+    font-weight: bold;
+}
+
+.no-tags-selected {
+    color: #999;
+    font-size: 13px;
+    text-align: center;
+    padding: 20px 0;
+}
+
+/* Clear button styling */
+.clear-btn {
+    background: #888 !important;
+    margin-top: 10px;
+}
+
+.clear-btn:hover {
+    background: #666 !important;
+}
+
+/* List view row colors (full row) */
+.row-image { 
+    background: rgba(255, 165, 0, 0.15) !important; 
+    border-left: 4px solid #FFA500; 
+}
+
+.row-video { 
+    background: rgba(74, 144, 226, 0.15) !important; 
+    border-left: 4px solid #4A90E2; 
+}
+
+.row-audio { 
+    background: rgba(40, 167, 69, 0.15) !important; 
+    border-left: 4px solid #28a745; 
+}
+
+.row-text { 
+    background: rgba(128, 128, 128, 0.15) !important; 
+    border-left: 4px solid #888; 
+}

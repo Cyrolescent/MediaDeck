@@ -4,7 +4,7 @@ require_once __DIR__ . '/config/dbconfig.php';
 
 $error = '';
 
-// Handle tag deletion
+// TAG DELETION THING
 if (isset($_GET['delete_tag']) && is_numeric($_GET['delete_tag'])) {
     $tag_id = (int)$_GET['delete_tag'];
     
@@ -19,7 +19,7 @@ if (isset($_GET['delete_tag']) && is_numeric($_GET['delete_tag'])) {
     exit;
 }
 
-// Handle tag creation
+// TAG CREATION FUNCTION PO
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_tag'])) {
     $tag_name = trim($_POST['tag_name'] ?? '');
     $tag_media_type = $_POST['tag_media_type'] ?? 'universal';
@@ -105,30 +105,6 @@ try {
                     <h3><?php echo htmlspecialchars($current_username); ?></h3>
                     <p><strong>Status:</strong> <?php echo ucfirst($current_status); ?></p>
                     <p><strong>User ID:</strong> #<?php echo $current_user_id; ?></p>
-                </div>
-            </div>
-
-            <!-- Dark/Light Mode -->
-            <div class="settings-section">
-                <h2>🌓 Theme Settings</h2>
-                <p>Choose your preferred color theme</p>
-                
-                <div class="theme-selector">
-                    <div class="theme-option active" data-theme="light">
-                        <div class="theme-icon">☀️</div>
-                        <strong>Light Mode</strong>
-                        <p>Bright and clear</p>
-                    </div>
-                    <div class="theme-option" data-theme="dark">
-                        <div class="theme-icon">🌙</div>
-                        <strong>Dark Mode</strong>
-                        <p>Easy on the eyes</p>
-                    </div>
-                    <div class="theme-option" data-theme="auto">
-                        <div class="theme-icon">🔄</div>
-                        <strong>Auto</strong>
-                        <p>Follow system</p>
-                    </div>
                 </div>
             </div>
 
