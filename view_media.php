@@ -3,7 +3,7 @@ require_once __DIR__ . '/config/dbconfig.php';
 require_once __DIR__ . '/config/auth_check.php';
 require_once __DIR__ . '/config/tag_functions.php';
 
-// Fetch all media with user isolation
+// MEDIA GETTER, dito malaman ng Post kung anong medias available sa database!
 $sql = "SELECT id, title, type, storage_type, file_path, thumbnail, rating, is_favorite, notes, created_at FROM media WHERE user_id = ? ORDER BY created_at DESC";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $current_user_id);
@@ -18,7 +18,6 @@ $allMediaArray = [];
 
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
-        // Get tags for this media item
         $mediaTagsData = getMediaTags($pdo, $row['id']);
         $row['tags'] = array_merge($mediaTagsData['default'], $mediaTagsData['custom']);
         $row['tag_ids'] = array_column($row['tags'], 'id');
@@ -41,7 +40,7 @@ if ($result && $result->num_rows > 0) {
     }
 }
 
-// Get all available tags for filter
+//Para sa tags lang ito wag pakaelaman
 $allDefaultTags = [];
 $allCustomTags = [];
 foreach (['image', 'video', 'audio', 'text'] as $type) {
@@ -52,6 +51,9 @@ $allDefaultTags = array_unique($allDefaultTags, SORT_REGULAR);
 $allCustomTags = array_merge($allCustomTags, getCustomTags($pdo, $current_user_id, 'universal'));
 $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
 ?>
+
+
+<!-- WEBSITE HTML START CODE HERE HAHAHAHAHAHAHGAHAHDSDUJXYHDGBK -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -59,16 +61,15 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Media - MediaDeck</title>
     <link rel="stylesheet" href="assets/css/view.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
 </head>
 <body>
-    <?php include 'includes/header.php'; ?>
-
-    <!-- HEADER CONTROLS -->
-    <div class="header-controls">
+    <?php include 'includes/header.php'; ?>           <!-- YUNG  MAIN HEADER linker dito siya -->
+    <div class="header-controls">                     <!-- YUNG Viewer HEADER search, filter at view options -->
         <div class="search-box">
             <input type="text" placeholder="Search..." id="searchInput">
         </div>
-        <div class="control-buttons">
+        <div class="control-buttons">           
             <button id="filterBtn" onclick="toggleFilterPopup()">🔍 Filter</button>
             <button id="viewOptionsBtn" onclick="toggleViewOptions()">👁️ View Options</button>
             <button class="add-media-btn" onclick="window.location.href='add_media.php'">Add Media</button>
@@ -232,12 +233,13 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
         </div>
     </div>
 
-    <!-- FILTER POPUP -->
+
+    <!-- FILTER POPUP, Dito silter settings menu code -->
     <div class="sidebar-popup" id="filterPopup">
         <button class="close-btn" onclick="toggleFilterPopup()">×</button>
         <h3>Filter Options</h3>
         
-        <!-- Ratings -->
+        <!-- Ratings check -->
         <div class="filter-section">
             <h4>Ratings ⭐</h4>
             <div class="rating-filter-row">
@@ -249,12 +251,12 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
             </div>
         </div>
         
-        <!-- Favorites -->
+        <!-- Favorites  check-->
         <div class="filter-section">
             <label><input type="checkbox" id="filterFavorite"> Favorites Only</label>
         </div>
         
-        <!-- Media Types -->
+        <!-- Media Types check if img, vid, doc or aud -->
         <div class="filter-section">
             <h4>Media Types</h4>
             <div class="filter-two-columns">
@@ -265,7 +267,7 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
             </div>
         </div>
         
-        <!-- Storage Method -->
+        <!-- Storage Method  upload or link ba siya????? -->
         <div class="filter-section">
             <h4>Storage Method</h4>
             <div class="filter-two-columns">
@@ -274,7 +276,7 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
             </div>
         </div>
         
-        <!-- Tag Selection -->
+        <!-- Tag Selection DITO ANG LAKI chicheck if what tags siya-->
         <div class="filter-section">
             <div class="tag-selection-container">
                 <!-- Default Tags -->
@@ -314,7 +316,6 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
                 </div>
             </div>
         </div>
-        
         <!-- Selected Tags Display -->
         <div class="filter-section">
             <div class="selected-tags-display">
@@ -332,7 +333,9 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
         <button class="apply-btn clear-btn" onclick="clearFilters()">Clear All</button>
     </div>
 
-    <!-- VIEW OPTIONS POPUP -->
+
+
+    <!-- VIEW OPTIONS POPUP SETTINGS menu -->
     <div class="sidebar-popup" id="viewOptionsPopup">
         <button class="close-btn" onclick="toggleViewOptions()">×</button>
         <h3>View Options</h3>
@@ -392,7 +395,6 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
         const MAX_FILTER_TAGS = 10;
         let isSearching = false;
 
-        // Load saved settings from localStorage
         function loadSettings() {
             const saved = localStorage.getItem('mediaDeckSettings');
             if (saved) {
@@ -403,14 +405,12 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
                     activeFilters = settings.filters || activeFilters;
                     selectedFilterTags = settings.selectedFilterTags || [];
                     
-                    // Apply saved settings to UI
                     document.querySelector(`input[name="sortOption"][value="${currentSort}"]`).checked = true;
                     document.querySelector(`input[name="viewMode"][value="${viewOptions.viewMode}"]`).checked = true;
                     document.getElementById('showRatings').checked = viewOptions.showRatings;
                     document.getElementById('showFavorites').checked = viewOptions.showFavorites;
                     document.getElementById('mediaTypeColors').checked = viewOptions.mediaTypeColors;
                     
-                    // Restore filter checkboxes
                     activeFilters.ratings.forEach(rating => {
                         const cb = document.querySelector(`.filter-rating[value="${rating}"]`);
                         if (cb) cb.checked = true;
@@ -425,7 +425,6 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
                     });
                     document.getElementById('filterFavorite').checked = activeFilters.favorite;
                     
-                    // Restore selected filter tags
                     selectedFilterTags.forEach(tagId => {
                         const cb = document.querySelector(`.filter-tag-checkbox[value="${tagId}"]`);
                         if (cb) cb.checked = true;
@@ -439,7 +438,6 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
             }
         }
 
-        // Save settings to localStorage
         function saveSettings() {
             const settings = {
                 sort: currentSort,
@@ -450,12 +448,10 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
             localStorage.setItem('mediaDeckSettings', JSON.stringify(settings));
         }
 
-        // Update button tints based on active filters/options
         function updateButtonTints() {
             const filterBtn = document.getElementById('filterBtn');
             const viewOptionsBtn = document.getElementById('viewOptionsBtn');
             
-            // Check if any filters are active
             const hasActiveFilters = activeFilters.ratings.length > 0 ||
                                     activeFilters.types.length > 0 ||
                                     activeFilters.favorite ||
@@ -468,7 +464,6 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
                 filterBtn.classList.remove('active-btn');
             }
             
-            // Check if view options are non-default
             const hasActiveViewOptions = viewOptions.showRatings ||
                                          viewOptions.showFavorites ||
                                          viewOptions.mediaTypeColors ||
@@ -482,7 +477,7 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
             }
         }
 
-        // Scroll functions
+        // PAG GUSTO MAG SCROLL DITO ANG CODE
         function scrollLeft(container) {
             const wrapper = container.querySelector('.items-wrapper');
             wrapper.scrollBy({ left: -300, behavior: 'smooth' });
@@ -505,19 +500,17 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
             updateViewOptionsDisplay();
         }
 
-        // Update View Options display based on selected view mode
+        // Updater ng menu depends sa view options
         function updateViewOptionsDisplay() {
             const viewMode = document.querySelector('input[name="viewMode"]:checked').value;
             document.getElementById('gridDisplayOptions').style.display = viewMode === 'grid' ? 'block' : 'none';
             document.getElementById('listDisplayOptions').style.display = viewMode === 'list' ? 'block' : 'none';
         }
 
-        // Watch for view mode changes
         document.querySelectorAll('input[name="viewMode"]').forEach(radio => {
             radio.addEventListener('change', updateViewOptionsDisplay);
         });
 
-        // Tag filter search functionality
         document.getElementById('searchDefaultTags').addEventListener('input', function(e) {
             filterTagList('defaultTagsList', e.target.value);
         });
@@ -537,7 +530,7 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
             });
         }
 
-        // Tag selection for filter
+        // Selector ng tags po
         document.querySelectorAll('.filter-tag-checkbox').forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 const tagId = parseInt(this.value);
@@ -562,6 +555,7 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
             });
         });
 
+        // ishowshow kung anong selected tags
         function updateSelectedTagsDisplay() {
             const display = document.getElementById('selectedTagsDisplay');
             const counter = document.getElementById('tagCounterFilter');
@@ -597,7 +591,7 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
             updateSelectedTagsDisplay();
         }
 
-        // Search functionality
+        // Searcher FUNCTION CODE for search box
         let searchTimeout;
         document.getElementById('searchInput').addEventListener('input', function(e) {
             clearTimeout(searchTimeout);
@@ -611,7 +605,6 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
             isSearching = query !== '';
             
             if (!isSearching && !hasActiveFilters()) {
-                // No search, no filters - show normal grid view
                 refreshView();
                 return;
             }
@@ -704,7 +697,7 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
             return div.innerHTML;
         }
 
-        // Filter functionality
+        // Filterer po rito 
         function applyFilters() {
             activeFilters.ratings = Array.from(document.querySelectorAll('.filter-rating:checked')).map(cb => parseInt(cb.value));
             activeFilters.types = Array.from(document.querySelectorAll('.filter-type:checked')).map(cb => cb.value);
@@ -909,12 +902,12 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
         }
 
         function applyDisplayOptions() {
-            // Show/Hide Ratings
+            // Show/Hide Ratings SHOW OPTIONNNNNNNN Ratings 1-5
             document.querySelectorAll('.rating-badge').forEach(badge => {
                 badge.style.display = viewOptions.showRatings ? 'flex' : 'none';
             });
 
-            // Show/Hide Favorites
+            // Show/Hide Favorites Heart
             document.querySelectorAll('.favorite-badge').forEach(badge => {
                 const parent = badge.closest('[data-favorite]');
                 if (parent && parent.dataset.favorite == '1' && viewOptions.showFavorites) {
@@ -980,5 +973,6 @@ $allCustomTags = array_unique($allCustomTags, SORT_REGULAR);
         updateViewOptionsDisplay();
         refreshView();
     </script>
+    <?php include 'includes/footer.php'; ?>
 </body>
 </html>

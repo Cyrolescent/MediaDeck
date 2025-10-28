@@ -10,19 +10,19 @@ if ($id <= 0) {
     exit;
 }
 
-// Fetch the media item
+// Getter ng media post
 $stmt = $conn->prepare("SELECT * FROM media WHERE id = ? AND user_id = ?");
 $stmt->bind_param("ii", $id, $current_user_id);
 $stmt->execute();
 $result = $stmt->get_result();
 $media = $result ? $result->fetch_assoc() : null;
 
+//incase lang kung walang laman error
 if (!$media) {
     header('Location: view_media.php');
     exit;
 }
 
-// Load existing tags
 $mediaTagsData = getMediaTags($pdo, $id);
 $selectedTagIds = array_merge(
     array_column($mediaTagsData['default'], 'id'),
@@ -43,12 +43,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $is_favorite = isset($_POST['is_favorite']) ? 1 : 0;
     $selected_tags = isset($_POST['selected_tags']) ? json_decode($_POST['selected_tags'], true) : [];
     
-    $thumbnail_path = $media['thumbnail']; // Keep existing thumbnail by default
+    $thumbnail_path = $media['thumbnail'];
 
     if (empty($title)) {
         $error = "⚠ Title is required!";
-    } else {
-        // Handle thumbnail upload (only for audio/video with upload storage)
+    } else { 
         if ($media['storage_type'] === 'upload' && in_array($media['type'], ['audio', 'video']) && 
             isset($_FILES['thumbnail_upload']) && $_FILES['thumbnail_upload']['error'] === UPLOAD_ERR_OK) {
             
@@ -60,7 +59,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $thumb_path = __DIR__ . '/uploads/' . $thumb_filename;
                 
                 if (move_uploaded_file($thumb_file['tmp_name'], $thumb_path)) {
-                    // Delete old thumbnail if exists
                     if (!empty($media['thumbnail']) && file_exists(__DIR__ . '/' . $media['thumbnail'])) {
                         unlink(__DIR__ . '/' . $media['thumbnail']);
                     }
@@ -69,24 +67,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // Update media
+        // UPDATE FUNCTION PO
         if ($media['storage_type'] === 'link') {
             $update = $conn->prepare("UPDATE media SET title = ?, file_path = ?, notes = ?, rating = ?, is_favorite = ?, thumbnail = ? WHERE id = ? AND user_id = ?");
             $update->bind_param("sssiisii", $title, $file_path, $notes, $rating, $is_favorite, $thumbnail_path, $id, $current_user_id);
-        } else {
-            // For uploads, don't change file_path
+        } else { // IF UPLOAD SIYA
             $update = $conn->prepare("UPDATE media SET title = ?, notes = ?, rating = ?, is_favorite = ?, thumbnail = ? WHERE id = ? AND user_id = ?");
             $update->bind_param("ssiisii", $title, $notes, $rating, $is_favorite, $thumbnail_path, $id, $current_user_id);
         }
 
+        // LIMITER 10 tags lang dapat ang post
         if ($update->execute()) {
-            // Save tags (limit to 10)
             if (is_array($selected_tags)) {
                 $tags_to_save = array_slice($selected_tags, 0, 10);
                 saveMediaTags($conn, $id, $tags_to_save);
             }
-            
-            // Redirect to detail page
             header("Location: view_detail.php?id=" . $id);
             exit;
         } else {
@@ -95,6 +90,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -102,182 +100,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Media - MediaDeck</title>
     <link rel="stylesheet" href="assets/css/add_media.css">
-    <style>
-        .tags-container-new {
-            margin-top: 10px;
-        }
-        
-        .tag-search-box {
-            position: relative;
-        }
-        
-        .tag-search-input {
-            width: 100%;
-            padding: 10px 35px 10px 10px;
-            border: 1px solid #555;
-            border-radius: 8px;
-            background: #2A1535;
-            color: #f0f0f0;
-            font-size: 14px;
-        }
-        
-        .tag-search-input:focus {
-            outline: none;
-            border-color: #4A90E2;
-        }
-        
-        .search-icon {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #888;
-            pointer-events: none;
-        }
-        
-        .tags-section-wrapper {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .tags-section-wrapper-vertical {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 5px;
-        }
-        
-        .available-tags, .selected-tags {
-            background: #2A1535;
-            border: 1px solid #555;
-            border-radius: 8px;
-            padding: 15px;
-            min-height: 200px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
-        .available-tags-compact, .selected-tags-compact {
-            background: #2A1535;
-            border: 1px solid #555;
-            border-radius: 8px;
-            padding: 10px;
-            min-height: 120px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-        
-        .section-header {
-            font-weight: bold;
-            color: #f0f0f0;
-            margin-bottom: 10px;
-            font-size: 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .tag-counter {
-            color: #4A90E2;
-            font-size: 12px;
-        }
-        
-        .tag-counter.limit-reached {
-            color: #ff6b6b;
-        }
-        
-        .tag-item {
-            display: inline-block;
-            padding: 6px 12px;
-            margin: 5px 5px 5px 0;
-            border-radius: 15px;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: 1px solid #555;
-        }
-        
-        .tag-item.available {
-            background: #3d2550;
-            color: #f0f0f0;
-        }
-        
-        .tag-item.available:hover {
-            background: #4A90E2;
-            border-color: #4A90E2;
-        }
-        
-        .tag-item.selected {
-            background: #4A90E2;
-            color: white;
-            border-color: #4A90E2;
-        }
-        
-        .tag-item.selected:hover {
-            background: #ff6b6b;
-            border-color: #ff6b6b;
-        }
-        
-        .tag-type-badge {
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 8px;
-            background: rgba(255,255,255,0.1);
-            margin-left: 5px;
-        }
-        
-        .no-tags-message {
-            color: #888;
-            text-align: center;
-            padding: 20px;
-            font-size: 13px;
-        }
-        
-        .tags-divider {
-            margin: 15px 0;
-            border: none;
-            border-top: 1px solid #555;
-        }
-        
-        .tag-category {
-            color: #888;
-            font-size: 12px;
-            margin-top: 15px;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-        
-        .tag-category:first-child {
-            margin-top: 0;
-        }
-
-        .media-info-box {
-            background: linear-gradient(135deg, #1D0C2E 0%, #2A1535 100%);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid #667eea;
-            border: 1px solid #555;
-        }
-
-        .media-info-box h3 {
-            margin: 0 0 10px 0;
-            color: #4A90E2;
-            font-size: 16px;
-        }
-
-        .media-info-box p {
-            margin: 5px 0;
-            color: #f0f0f0;
-            font-size: 14px;
-        }
-
-        .media-info-box strong {
-            color: #888;
-        }
-    </style>
+    <link rel="stylesheet" href="assets/css/edit.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
@@ -296,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="alert alert-error"><?= $error ?></div>
                 <?php endif; ?>
 
-                <!-- Media Info Box (Non-editable) -->
+                <!-- INFO BOX NG MEDIA HINDI NAEEDIT -->
                 <div class="media-info-box">
                     <h3>📋 Media Information</h3>
                     <p><strong>Type:</strong> <?= strtoupper($media['type']) ?></p>
@@ -305,17 +129,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <form method="POST" action="" enctype="multipart/form-data" id="editMediaForm">
-                    <!-- Hidden field for selected tags -->
                     <input type="hidden" id="selected_tags_input" name="selected_tags" value="[]">
                     
-                    <!-- Title -->
+                    <!-- TITLE LOOK -->
                     <div class="form-group">
                         <h1 style="font-family: 'Montserrat', sans-serif;">Edit Your Media</h1>
                         <label for="title">Title:</label> <br>
                         <input type="text" id="title" name="title" required value="<?= htmlspecialchars($media['title']) ?>">
                     </div> <br>
 
-                    <!-- File/Link Path (only editable for links) -->
+                    <!--FILE PATH DITO -->
                     <?php if ($media['storage_type'] === 'link'): ?>
                         <div class="form-group">
                             <label for="file_path">Link Path:</label>
@@ -329,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div><br>
                     <?php endif; ?>
 
-                    <!-- Thumbnail Upload (only for audio/video + upload) -->
+                    <!-- Thumbnail Upload for audio and video lang-->
                     <?php if ($media['storage_type'] === 'upload' && in_array($media['type'], ['audio', 'video'])): ?>
                         <div class="form-group">
                             <label for="thumbnail_upload">Change Thumbnail (Optional):</label>
@@ -435,6 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script>
         const mediaType = '<?= $media['type'] ?>';
         
+        // GET THE TAGS FROM LIST 
         const allTagsData = <?php echo json_encode([
             'image' => ['default' => getDefaultTags($pdo, 'image'), 'custom' => getCustomTags($pdo, $current_user_id, 'image')],
             'video' => ['default' => getDefaultTags($pdo, 'video'), 'custom' => getCustomTags($pdo, $current_user_id, 'video')],
@@ -443,7 +267,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'universal_custom' => getCustomTags($pdo, $current_user_id, 'universal')
         ]); ?>;
 
-        // Pre-load existing tags
+        // Pre
         let selectedTags = <?php echo json_encode(array_map('intval', $selectedTagIds)); ?>;
         const MAX_TAGS = 10;
 
@@ -453,12 +277,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             availableList.innerHTML = '';
             
-            // Get tags for current type
             const defaultTags = allTagsData[mediaType]?.default || [];
             const customTags = allTagsData[mediaType]?.custom || [];
             const universalTags = allTagsData.universal_custom || [];
             
-            // Filter out already selected tags
+            // Show all the not selcted tags sa sections
             const availableDefault = defaultTags.filter(tag => 
                 !selectedTags.includes(tag.id) && 
                 tag.name.toLowerCase().includes(searchTerm)
@@ -473,7 +296,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 return;
             }
             
-            // Display default tags
             if (availableDefault.length > 0) {
                 const defaultCategory = document.createElement('div');
                 defaultCategory.className = 'tag-category';
@@ -486,7 +308,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 });
             }
             
-            // Display custom tags
+            // CUSTOM TAGS DITO
             if (availableCustom.length > 0) {
                 if (availableDefault.length > 0) {
                     const divider = document.createElement('hr');
@@ -506,6 +328,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // uPDATE the tags heres
         function updateSelectedTags() {
             const selectedList = document.getElementById('selectedTagsList');
             const counter = document.getElementById('tagCounter');
@@ -520,7 +343,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             selectedList.innerHTML = '';
             
-            // Get all tags to find names
             const allTags = [
                 ...(allTagsData[mediaType]?.default || []),
                 ...(allTagsData[mediaType]?.custom || []),
@@ -534,8 +356,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     selectedList.appendChild(tagEl);
                 }
             });
-            
-            // Update hidden input
             document.getElementById('selected_tags_input').value = JSON.stringify(selectedTags);
         }
 
@@ -550,20 +370,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 badge.textContent = 'ALL';
                 tagEl.appendChild(badge);
             }
-            
             tagEl.onclick = () => toggleTag(tag.id);
-            
             return tagEl;
         }
 
+        // Tag on and off functions dito
         function toggleTag(tagId) {
             const index = selectedTags.indexOf(tagId);
             
             if (index > -1) {
-                // Remove tag
                 selectedTags.splice(index, 1);
             } else {
-                // Add tag (if under limit)
                 if (selectedTags.length < MAX_TAGS) {
                     selectedTags.push(tagId);
                 } else {
@@ -571,17 +388,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     return;
                 }
             }
-            
             updateAvailableTags();
             updateSelectedTags();
         }
 
-        // Search functionality
+        // Tag SEARCHER dito
         document.getElementById('tagSearch').addEventListener('input', function() {
             updateAvailableTags();
         });
 
-        // Thumbnail preview for new uploads
+        // Thumbnail viewer dito
         document.getElementById('thumbnail_upload')?.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
@@ -593,10 +409,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 reader.readAsDataURL(file);
             }
         });
-
-        // Initialize tags on page load
         updateAvailableTags();
         updateSelectedTags();
     </script>
+    <?php include 'includes/footer.php'; ?>
 </body>
 </html>

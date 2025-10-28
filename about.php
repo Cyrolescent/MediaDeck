@@ -8,6 +8,7 @@ require_once __DIR__ . '/config/auth_check.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About - MediaDeck</title>
     <link rel="stylesheet" href="assets/css/about.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
@@ -60,5 +61,6 @@ require_once __DIR__ . '/config/auth_check.php';
             </div>
         </div>
     </div>
+    <?php include 'includes/footer.php'; ?>
 </body>
 </html>

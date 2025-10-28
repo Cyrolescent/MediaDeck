@@ -1,22 +1,11 @@
 html, body {
     margin: 0;
     padding: 0;
-    height: 80%;
+    height: 100%;
     overflow: hidden; /* prevents extra scrolling */
     font-family: "Poppins", sans-serif;
-    background: linear-gradient(rgba(0,0,0,1), rgba(33,20,127,1));
+    background: linear-gradient(rgb(0, 0, 0), rgba(33,20,127,1));
     color: white;
-}
-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background-color: #111827;
-    color: white;
-    text-align: center;
-    padding: 15px 0;
-    font-size: 14px;
 }
 
 
@@ -25,7 +14,7 @@ footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: calc(100vh - 70px); /* perfect height minus header */
+    height: calc(100vh - 70px);
     padding: 80px;
     box-sizing: border-box;
     overflow: hidden;

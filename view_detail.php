@@ -21,11 +21,8 @@ if (!$media) {
     exit;
 }
 
-// Get tags for this media
-$mediaTagsData = getMediaTags($pdo, $id);
-
-// Check if file is uploaded and exists
-$isUploaded = ($media['storage_type'] === 'upload');
+$mediaTagsData = getMediaTags($pdo, $id);                   // Get the Tags
+$isUploaded = ($media['storage_type'] === 'upload');        // Check if file exist / available siya
 $fileExists = false;
 $fullPath = '';
 if ($isUploaded && !empty($media['file_path'])) {
@@ -33,11 +30,12 @@ if ($isUploaded && !empty($media['file_path'])) {
     $fileExists = file_exists($fullPath);
 }
 
-// Get file extension for document handling
 $fileExt = strtolower(pathinfo($media['file_path'], PATHINFO_EXTENSION));
 $textFormats = ['txt', 'csv', 'rtf'];
 $embedFormats = ['pdf', 'html'];
 $officeFormats = ['docx', 'pptx', 'xlsx', 'odt'];
+
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -46,199 +44,6 @@ $officeFormats = ['docx', 'pptx', 'xlsx', 'odt'];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($media['title']) ?> - MediaDeck</title>
     <link rel="stylesheet" href="assets/css/detail.css">
-    <style>
-        /* Audio Player Styles */
-        .audio-player-container {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .audio-thumbnail {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            overflow: hidden;
-            flex-shrink: 0;
-        }
-
-        .audio-thumbnail img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .audio-controls {
-            flex: 1;
-        }
-
-        audio {
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        /* Video Player Styles */
-        .video-player-container {
-            width: 100%;
-            margin-bottom: 20px;
-        }
-
-        video {
-            width: 100%;
-            max-height: 500px;
-            border-radius: 8px;
-            background: #000;
-        }
-
-        /* Document Viewer Styles */
-        .document-viewer {
-            width: 100%;
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            max-height: 500px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            white-space: pre-wrap;
-            color: #333;
-            line-height: 1.6;
-        }
-
-        .document-viewer.csv-table {
-            font-family: Arial, sans-serif;
-            overflow-x: auto;
-        }
-
-        .document-viewer.csv-table table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .document-viewer.csv-table th,
-        .document-viewer.csv-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-
-        .document-viewer.csv-table th {
-            background: #f5f5f5;
-            font-weight: bold;
-        }
-
-        iframe.document-embed {
-            width: 100%;
-            height: 600px;
-            border: none;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .btn-delete {
-            background: #f44336;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 20px;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-        }
-
-        .btn-delete:hover {
-            background: #d32f2f;
-            transform: scale(1.05);
-        }
-
-        .unsupported-format {
-            padding: 20px;
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            border-radius: 8px;
-            color: #856404;
-            margin-bottom: 20px;
-        }
-
-        /* Tags Section Styles */
-        .tags-section {
-            background: rgba(42, 21, 53, 0.8);
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        .tags-section h2 {
-            color: #f0f0f0;
-            font-size: 24px;
-            margin: 0 0 15px 0;
-            text-align: center;
-        }
-
-        .tag-group {
-            margin-bottom: 15px;
-        }
-
-        .tag-group:last-child {
-            margin-bottom: 0;
-        }
-
-        .tag-group-title {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #f0f0f0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .tag-badges {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .tag-badge {
-            display: inline-block;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 500;
-            color: white;
-            transition: transform 0.2s;
-        }
-
-        .tag-badge:hover {
-            transform: scale(1.05);
-        }
-
-        .tag-badge-default {
-            background: #4A90E2;
-        }
-
-        .tag-badge-custom {
-            background: #764ba2;
-        }
-
-        .no-tags-message {
-            text-align: center;
-            padding: 30px;
-            color: #999;
-            font-size: 14px;
-            font-style: italic;
-        }
-
-        .tags-divider {
-            height: 1px;
-            background: rgba(255, 255, 255, 0.2);
-            margin: 15px 0;
-        }
-    </style>
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
@@ -247,16 +52,17 @@ $officeFormats = ['docx', 'pptx', 'xlsx', 'odt'];
         <div class="detail-header">
             <h1><?= htmlspecialchars($media['title']) ?></h1>
             <div class="header-actions">
-                <a href="view_media.php" class="btn-back">← Back</a>
+                <a href="view_media.php" class="btn-back">Back</a>
                 <a href="edit_media.php?id=<?= $media['id'] ?>" class="btn-edit">✏️</a>
                 <button onclick="confirmDelete()" class="btn-delete">🗑️</button>
             </div>
         </div>
 
+        <!-- MEDIA PREVIEW/PLAYER -->
         <div class="detail-body">
-            <!-- MEDIA PREVIEW/PLAYER -->
+
+            <!-- AUDIO Player po dito -->
             <?php if ($media['type'] === 'audio' && $isUploaded && $fileExists): ?>
-                <!-- AUDIO PLAYER -->
                 <div class="audio-player-container">
                     <div class="audio-thumbnail">
                         <?php if (!empty($media['thumbnail']) && file_exists(__DIR__ . '/' . $media['thumbnail'])): ?>
@@ -272,9 +78,9 @@ $officeFormats = ['docx', 'pptx', 'xlsx', 'odt'];
                         </audio>
                     </div>
                 </div>
-
+            
+            <!-- TApos Video PLayer -->
             <?php elseif ($media['type'] === 'video' && $isUploaded && $fileExists): ?>
-                <!-- VIDEO PLAYER -->
                 <div class="video-player-container">
                     <video controls>
                         <source src="<?= htmlspecialchars($media['file_path']) ?>" type="video/<?= $fileExt ?>">
@@ -282,13 +88,14 @@ $officeFormats = ['docx', 'pptx', 'xlsx', 'odt'];
                     </video>
                 </div>
 
+            <!-- Text Viewer -->
             <?php elseif ($media['type'] === 'text' && $isUploaded && $fileExists): ?>
-                <!-- DOCUMENT VIEWER -->
                 <?php if (in_array($fileExt, $textFormats)): ?>
                     <?php
                     $content = file_get_contents($fullPath);
+
+                    // CSV Viewer Testing files, Wala na ito
                     if ($fileExt === 'csv') {
-                        // Parse CSV
                         $lines = array_map('str_getcsv', file($fullPath));
                         echo '<div class="document-viewer csv-table"><table>';
                         foreach ($lines as $index => $line) {
@@ -300,21 +107,20 @@ $officeFormats = ['docx', 'pptx', 'xlsx', 'odt'];
                         }
                         echo '</tbody></table></div>';
                     } else {
-                        // Display plain text
                         echo '<div class="document-viewer">' . htmlspecialchars($content) . '</div>';
                     }
                     ?>
 
+                    <!-- PDF Viewer Iframe-->
                 <?php elseif ($fileExt === 'pdf'): ?>
-                    <!-- PDF Embed -->
                     <iframe class="document-embed" src="<?= htmlspecialchars($media['file_path']) ?>#toolbar=1&navpanes=0"></iframe>
 
+                    <!-- HTML Viewer Iframe-->
                 <?php elseif ($fileExt === 'html'): ?>
-                    <!-- HTML Embed -->
                     <iframe class="document-embed" src="<?= htmlspecialchars($media['file_path']) ?>" sandbox="allow-same-origin"></iframe>
 
+                    <!-- Office Documents WALA ITO TANGGAL NA ANG PPTX DOCX ETC-->
                 <?php elseif (in_array($fileExt, $officeFormats)): ?>
-                    <!-- Office Documents -->
                     <div class="unsupported-format">
                         <strong>Office Document Preview</strong><br>
                         This format (<?= strtoupper($fileExt) ?>) requires external viewer.<br>
@@ -327,6 +133,7 @@ $officeFormats = ['docx', 'pptx', 'xlsx', 'odt'];
                         </a>
                     </div>
 
+                    <!-- Error Unsupported FILES sayer -->
                 <?php else: ?>
                     <div class="unsupported-format">
                         Unsupported document format. <a href="<?= htmlspecialchars($media['file_path']) ?>" download style="color: #4A90E2;">Download to view</a>
@@ -334,7 +141,8 @@ $officeFormats = ['docx', 'pptx', 'xlsx', 'odt'];
                 <?php endif; ?>
 
             <?php else: ?>
-                <!-- DEFAULT IMAGE/ICON PREVIEW -->
+
+                <!-- DEFAULT IMAGE/ICON PREVIEW FOR IMAGE MEDIAS DITO -->
                 <div class="media-preview">
                     <?php
                     $isImage = preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $media['file_path']);
@@ -362,7 +170,9 @@ $officeFormats = ['docx', 'pptx', 'xlsx', 'odt'];
                 </div>
             <?php endif; ?>
 
-            <!-- NOTES -->
+
+
+            <!-- NOTES  LAHAT NG NOTES NG MEDIA RITO-->
             <div class="info-section">
                 <h2>Notes / Description</h2>
                 <div style="padding: 15px; background: #f9f9f9; border-radius: 8px; min-height: 60px;">
@@ -374,7 +184,7 @@ $officeFormats = ['docx', 'pptx', 'xlsx', 'odt'];
                 </div>
             </div>
 
-            <!-- RATINGS AND FAVORITE -->
+            <!-- RATINGS AND FAVORITE  dito-->
             <div class="info-section">
                 <div class="info-row">
                     <div class="info-label">Rating:</div>
@@ -390,13 +200,14 @@ $officeFormats = ['docx', 'pptx', 'xlsx', 'odt'];
                         <?php if ($media['is_favorite']): ?>
                             <span class="favorite-indicator">❤️ Yes</span>
                         <?php else: ?>
-                            <span style="color: #999;">No</span>
+                            <span style="color: #999;">❌ No</span>
                         <?php endif; ?>
                     </div>
                 </div>
             </div>
 
-            <!-- TAGS SECTION -->
+
+            <!-- TAGS SECTIONs LAHAT DITO TAGS LALABAS-->
             <div class="tags-section">
                 <h2>Tags 🏷️</h2>
                 
@@ -437,7 +248,8 @@ $officeFormats = ['docx', 'pptx', 'xlsx', 'odt'];
                 <?php endif; ?>
             </div>
 
-            <!-- STORAGE INFO -->
+
+            <!-- STORAGE INFO, infos ng strg type, file at date uploaded po-->
             <div class="info-section">
                 <h2>Storage Information</h2>
                 
@@ -471,10 +283,13 @@ $officeFormats = ['docx', 'pptx', 'xlsx', 'odt'];
         </div>
     </div>
 
+
+    <!-- script for delete media button -->
     <script>
         function confirmDelete() {
                 window.location.href = 'delete_media.php?id=<?= $media['id'] ?>';
         }
     </script>
+    <?php include 'includes/footer.php'; ?>
 </body>
 </html>

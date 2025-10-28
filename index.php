@@ -16,6 +16,7 @@ require_once __DIR__ . '/config/dbconfig.php';
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
     <title>MediaDeck - Home</title>
     <link rel="stylesheet" href="assets/css/home.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
 </head>
 <body>
 <?php include 'includes/header.php'; ?>
